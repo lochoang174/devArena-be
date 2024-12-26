@@ -1,18 +1,21 @@
-import { Injectable } from '@nestjs/common';
-import { CreateUserDto } from './dto/create-user.dto';
-import { UpdateUserDto } from './dto/update-user.dto';
-import { User } from './schema/user.schema';
-import { InjectModel } from '@nestjs/mongoose';
-import { Model } from 'mongoose';
+import { forwardRef, Injectable } from "@nestjs/common";
+import { CreateUserDto } from "./dto/create-user.dto";
+import { UpdateUserDto } from "./dto/update-user.dto";
+import { User } from "../schemas/user.schema";
+import { InjectModel } from "@nestjs/mongoose";
+import { Model } from "mongoose";
 
 @Injectable()
 export class UserService {
-  constructor(@InjectModel(User.name) private userModel: Model<User>) {}
+  constructor(
+    @InjectModel("User") private userModel: Model<User>
+  ) {}
   async create(createUserDto: User) {
     try {
+      console.log(createUserDto)
       const user = new this.userModel(createUserDto);
       const savedUser = await user.save();
-      
+
       // Chuyển đổi document thành object và loại bỏ password
       const userObject = savedUser.toObject();
       delete userObject.password;
@@ -20,14 +23,14 @@ export class UserService {
       return userObject;
     } catch (error) {
       if (error.code === 11000) {
-        throw new Error('User with this email already exists');
+        throw new Error("User with this email already exists");
       }
-      throw new Error('Error creating user: ' + error.message);
+      throw new Error("Error creating user: " + error.message);
     }
   }
-  async findByEmail(email: string){
-    const user = this.userModel.findOne({email})
-    return user
+  async findByEmail(email: string) {
+    const user = this.userModel.findOne({ email });
+    return user;
   }
   findAll() {
     return `This action returns all user`;
@@ -37,27 +40,30 @@ export class UserService {
     return `This action returns a #${id} user`;
   }
 
-  update(id: number, updateUserDto: UpdateUserDto) {
+  update(id: string) {
+    const user = this.userModel.findByIdAndUpdate()
     return `This action updates a #${id} user`;
   }
   async verifyUser(userId: string) {
     try {
-      const user = await this.userModel.findByIdAndUpdate(
-        { _id: userId },
-        { isEmailVerified: true },
-        { new: true } // Return the modified document rather than the original
-      ).exec();
-  
+      const user = await this.userModel
+        .findByIdAndUpdate(
+          { _id: userId },
+          { isEmailVerified: true },
+          { new: true }, // Return the modified document rather than the original
+        )
+        .exec();
+
       if (!user) {
-        throw new Error('User not found');
+        throw new Error("User not found");
       }
-  
+
       return user;
     } catch (error) {
       throw error;
     }
   }
-  
+
   remove(id: number) {
     return `This action removes a #${id} user`;
   }
@@ -79,5 +85,8 @@ export class UserService {
       { new: true },
     );
   }
-  
+  updateToken =async (refresh_token : string, id : string)=>{
+    return await this.userModel.updateOne({_id:id},{refreshToken:refresh_token})
+
+ }
 }

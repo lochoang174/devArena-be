@@ -1,7 +1,7 @@
 import { IsEnum, IsNotEmpty, IsString, IsArray, IsOptional, ValidateNested } from 'class-validator';
-import { DifficultyEnum, LanguageEnum } from '../schema/exercise.schema';
 import { TestcaseDto } from './testcase.dto';
 import { Type } from 'class-transformer';
+import { DifficultyEnum, LanguageEnum } from '../../schemas/exercise.schema';
 
 export class CreateExerciseDto {
   @IsString()

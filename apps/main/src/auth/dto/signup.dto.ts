@@ -1,5 +1,11 @@
-import { IsEmail, IsString, IsNotEmpty, Matches, IsEnum } from 'class-validator';
-import { ProviderEnum } from '../../user/schema/user.schema';
+import {
+  IsEmail,
+  IsString,
+  IsNotEmpty,
+  Matches,
+  IsEnum,
+} from "class-validator";
+import { ProviderEnum } from "../../schemas/user.schema";
 
 export class SignupDTO {
   @IsEmail()
@@ -11,11 +17,10 @@ export class SignupDTO {
   username: string;
 
   @IsString()
-  @Matches(/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)[a-zA-Z\d]{6,}$/,
-    {
-      message: 'Password must be at least 6 characters long and contain at least one uppercase letter, one lowercase letter, and one number',
-    }
-  )
+  @Matches(/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)[a-zA-Z\d]{6,}$/, {
+    message:
+      "Password must be at least 6 characters long and contain at least one uppercase letter, one lowercase letter, and one number",
+  })
   password: string;
 
   @IsEnum(ProviderEnum)

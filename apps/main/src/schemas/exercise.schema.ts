@@ -1,6 +1,6 @@
 import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
 import { Document, Types } from 'mongoose';
-import { Testcase, TestcaseSchema } from '../../testcase/schema/testcase.schema';
+// import { Testcase, TestcaseSchema } from '../../testcase/schema/testcase.schema';
 
 export type ExerciseDocument = Exercise & Document;
 
@@ -32,8 +32,7 @@ export class Exercise {
   @Prop()
   title: string;
 
-  @Prop({ enum: LanguageEnum, required: true })
-  language: LanguageEnum;
+
 
   @Prop({ enum: DifficultyEnum, required: true })
   difficulty: DifficultyEnum;
@@ -52,10 +51,10 @@ export class Exercise {
   tags: string[];
 
 
-  @Prop({
-    type: [TestcaseSchema], // Embed the Testcase schema as an array
-  })
-  testcases: Types.Array<Testcase>;
+  // @Prop({
+  //   type: [TestcaseSchema], // Embed the Testcase schema as an array
+  // })
+  // testcases: Types.Array<Testcase>;
 }
 
 export const ExerciseSchema = SchemaFactory.createForClass(Exercise);

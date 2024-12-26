@@ -6,19 +6,23 @@ import { CurrentUser } from '@app/common';
 import { LocalAuthGuard } from './guards/local-auth.guard';
 import { ResendDTO } from './dto/resend.dto';
 import { VerifyDTO } from './dto/verifyOtp.dto';
+import { Public, ResponseMessage } from '@app/common/decorators/customize';
+import { IUser } from '@app/common/types';
 
 @Controller('auth')
 export class AuthController {
   constructor(private readonly authService: AuthService) {}
   
   @Post('signup')
+  @Public()
   @HttpCode(HttpStatus.CREATED)
+  @ResponseMessage("Signup successfully!")
   async signup(@Body() signupDto: SignupDTO) {
     const newUser = await  this.authService.signup(signupDto)
     return {data: newUser};
     
   }
-
+  @Public()
   @Post('resend-otp')
   @HttpCode(HttpStatus.NO_CONTENT)
   async resend(@Body() resend: ResendDTO) {
@@ -28,6 +32,7 @@ export class AuthController {
   }
 
   @Post('verify')
+  @Public()
   @HttpCode(HttpStatus.NO_CONTENT)
   async verifyOtp(@Body() verify: VerifyDTO) {
     const newUser = await  this.authService.validateOtp(verify.email,verify.otpCode)
@@ -36,13 +41,13 @@ export class AuthController {
   }
 
   @Post('login')
+  @Public()
   @UseGuards(LocalAuthGuard) // Sửa Local thành LocalAuthGuard
   @HttpCode(HttpStatus.OK)
-  async login(@CurrentUser() user:any) {
-  
-    return {
-      data :user
-    }
+  @ResponseMessage("Signup successfully!")
+  async login(@CurrentUser() user:IUser) {
+    const res = this.authService.login(user)
+    return res
   }
 
   @Post('logout')

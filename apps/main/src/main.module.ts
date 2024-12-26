@@ -12,20 +12,34 @@ import { GraphExerciseModule } from './graph-exercise/graph-exercise.module';
 import { GraphQLModule } from '@nestjs/graphql';
 import { ApolloDriver } from '@nestjs/apollo';
 import { TestcaseModule } from './testcase/testcase.module';
+import { StudyModule } from './study/study.module';
+import { AlgorithmModule } from './algorithm/algorithm.module';
+import { DatabaseModule } from '@app/common/databases';
+import { MongooseModelsModule } from './schemas/mongoose.model';
+
+import { SubmissionModule } from './submission/submission.module';
+import { CourseModule } from './course/course.module';
+import { CourseStatusModule } from './course-status/course-status.module';
+import { ExerciseStatusModule } from './exercise-status/exercise-status.module';
+import { PassportModule } from '@nestjs/passport';
 
 @Module({
-  imports: [AuthModule, UserModule, ExerciseModule,
+  imports: [
+
     ConfigModule.forRoot({
       isGlobal: true,
       envFilePath: join(__dirname, '../../../apps/main/.env'),
     }),
-    MongooseModule.forRootAsync({
-      imports: [ConfigModule],
-      useFactory: async (configService: ConfigService) => ({
-        uri: configService.get<string>('MONGODB_URI'),
-      }),
-      inject: [ConfigService],
-    }),
+    DatabaseModule,
+    MongooseModelsModule,
+    AuthModule, UserModule,
+    // MongooseModule.forRootAsync({
+    //   imports: [ConfigModule],
+    //   useFactory: async (configService: ConfigService) => ({
+    //     uri: configService.get<string>('MONGODB_URI'),
+    //   }),
+    //   inject: [ConfigService],
+    // }),
     GraphQLModule.forRoot({
       autoSchemaFile: join(__dirname, 'schema.gql'), // Tạo schema tự động
       playground: true, // Bật GraphQL Playground (dành cho việc thử nghiệm API)
@@ -34,9 +48,16 @@ import { TestcaseModule } from './testcase/testcase.module';
       driver: ApolloDriver,
 
     }),
+    ExerciseModule,
     EmailModule,
     GraphExerciseModule,
-    TestcaseModule
+    TestcaseModule,
+    AlgorithmModule,
+    StudyModule,
+    SubmissionModule,
+    CourseModule,
+    CourseStatusModule,
+    ExerciseStatusModule,
   ],
   controllers: [MainController],
   providers: [MainService],
