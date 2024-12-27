@@ -1,20 +1,24 @@
-import { IsString, IsNotEmpty } from 'class-validator';
+import { IsString, IsNotEmpty, IsMongoId } from "class-validator";
+import { CreateExerciseDto } from "../../exercise/dto/create-exercise.dto";
+import { isValidObjectId, Types } from "mongoose";
 
-export class CreateStudyDto {
+export class CreateStudyDto extends CreateExerciseDto {
+
+
   @IsString()
   @IsNotEmpty()
-  title: string;
-
-  @IsString()
-  @IsNotEmpty()
-  difficulty: string;
-
-  @IsString()
-  language: string;
-
-  @IsString()
   sampleCode: string;
 
   @IsString()
+  @IsNotEmpty()
   solution: string;
+
+  
+  @IsMongoId()
+  @IsNotEmpty()
+  courseId: Types.ObjectId;
+
+
+
+  
 }

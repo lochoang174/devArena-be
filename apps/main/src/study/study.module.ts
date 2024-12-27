@@ -10,6 +10,8 @@ import { MongooseModelsModule } from "../schemas/mongoose.model";
 @Module({
   controllers: [StudyController],
   providers: [StudyService],
+  exports: [StudyService],
   // imports: [MongooseModelsModule],
 })
 export class StudyModule {}
+

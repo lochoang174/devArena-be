@@ -13,6 +13,7 @@ export const EXERCISE_MODEL = "ExerciseModel";
 export const STUDY_MODEL = "StudyModel";
 export const USER_MODEL = "UserModel";
 export const ALGORITHM_MODEL = "AlgorithmModel";
+export const COURSE_MODEL = "CourseModel";
 
 const MODELS = [
   {
@@ -24,6 +25,7 @@ const MODELS = [
     ],
   },
   { name: USER_MODEL, schema: UserSchema },
+  {name: COURSE_MODEL, schema: CourseSchema}
 ];
 
 @Global()
@@ -51,8 +53,13 @@ const MODELS = [
         exerciseModel.discriminators[ALGORITHM_MODEL],
       inject: [getModelToken(EXERCISE_MODEL)],
     },
+    {
+      provide: COURSE_MODEL,
+      useFactory: (courseModel) => courseModel,
+      inject: [getModelToken(COURSE_MODEL)],
+    },
   ],
   imports: [DatabaseModule, DatabaseModule.forFeature(MODELS)],
-  exports: [DatabaseModule, EXERCISE_MODEL, STUDY_MODEL, USER_MODEL],
+  exports: [DatabaseModule, EXERCISE_MODEL, STUDY_MODEL, USER_MODEL, COURSE_MODEL],
 })
 export class MongooseModelsModule {}

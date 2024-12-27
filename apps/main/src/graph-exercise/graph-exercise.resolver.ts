@@ -1,35 +1,30 @@
-import { Resolver, Query, Mutation, Args, Int } from '@nestjs/graphql';
-import { GraphExerciseService } from './graph-exercise.service';
-import { GraphExercise } from './entities/graph-exercise.entity';
-import { CreateGraphExerciseInput } from './dto/create-graph-exercise.input';
-import { UpdateGraphExerciseInput } from './dto/update-graph-exercise.input';
+import { Resolver, Query, Args } from "@nestjs/graphql";
+import { StudyService } from "../study/study.service";
+import { GraphExercise } from "./entities/graph-exercise.entity";
+import { Public } from "@app/common";
 
 @Resolver(() => GraphExercise)
 export class GraphExerciseResolver {
-  constructor(private readonly graphExerciseService: GraphExerciseService) {}
-
-  @Mutation(() => GraphExercise)
-  createGraphExercise(@Args('createGraphExerciseInput') createGraphExerciseInput: CreateGraphExerciseInput) {
-    return this.graphExerciseService.create(createGraphExerciseInput);
+  constructor(private readonly studyService: StudyService) {}
+  @Public()
+  @Query(() => [GraphExercise], { name: "graphExercises" })
+  async findAll() {
+    return this.studyService.findAll();
   }
 
-  @Query(() => [GraphExercise], { name: 'graphExercise' })
-  findAll() {
-    return this.graphExerciseService.findAll();
+  @Public()
+  @Query(() => GraphExercise, { name: "graphExercise" })
+  async findOne(@Args("id") id: string) {
+    return this.studyService.findById(id);
   }
 
-  @Query(() => GraphExercise, { name: 'graphExercise' })
-  findOne(@Args('id', { type: () => Int }) id: number) {
-    return this.graphExerciseService.findOne(id);
-  }
-
-  @Mutation(() => GraphExercise)
-  updateGraphExercise(@Args('updateGraphExerciseInput') updateGraphExerciseInput: UpdateGraphExerciseInput) {
-    return this.graphExerciseService.update(updateGraphExerciseInput.id, updateGraphExerciseInput);
-  }
-
-  @Mutation(() => GraphExercise)
-  removeGraphExercise(@Args('id', { type: () => Int }) id: number) {
-    return this.graphExerciseService.remove(id);
+  // @Query(() => [GraphExercise], { name: "exercisesByDifficulty" })
+  // async findByDifficulty(@Args("difficulty") difficulty: string) {
+  //   return this.studyService.findExercisesByDifficulty(difficulty);
+  // }
+  @Public()
+  @Query(() => [GraphExercise], { name: "exercisesByCourse" })
+  async findByCourse(@Args("courseId") courseId: string) {
+    return this.studyService.findExercisesByCourse(courseId);
   }
 }

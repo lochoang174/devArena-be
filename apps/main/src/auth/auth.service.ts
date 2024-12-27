@@ -63,7 +63,7 @@ export class AuthService {
 
     // Remove password from response
     const { role, _id, username, email } = user.toObject();
-    return { role, _id, username, email };
+    return { role, id:_id, username, email };
   }
 
   async signup(signupDto: SignupDTO) {
@@ -120,11 +120,12 @@ export class AuthService {
     return newUser;
   }
   async login(user: IUser) {
+    console.log("user"+user);
     const access_token = this.jwtService.sign(
       {
         id: user.id,
         role: user.role,
-        uesrname: user.username,
+        username: user.username,
         email: user.email,
       },
       {

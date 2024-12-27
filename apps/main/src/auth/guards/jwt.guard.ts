@@ -29,9 +29,7 @@ import {
     }
     handleRequest(err, user, info, context: ExecutionContext) {
       // You can throw an exception based on either "info" or "err" arguments
-      const request: Request = context.switchToHttp().getRequest();
-      console.log(user);
-      
+      const request: Request = context.switchToHttp().getRequest();     
       if (err || !user) {
         throw err || new UnauthorizedException('Token invalid');
       }

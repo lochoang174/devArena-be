@@ -1,5 +1,6 @@
 import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
 import { Document, SchemaTypes, Types } from 'mongoose';
+import { Testcase, TestcaseSchema } from './testcase.schema';
 
 export type ExerciseDocument = Exercise & Document;
 
@@ -26,6 +27,7 @@ export const PredefinedTags = [
 
 @Schema({
   timestamps: true, // Adds createdAt and updatedAt fields
+  discriminatorKey: "type",
 })
 export class Exercise {
   @Prop({ required: true })
@@ -60,10 +62,10 @@ export class Exercise {
   })
   outputType: 'string' | 'number' | 'array'; // Defines the expected type for the output
   @Prop({
-    type: [SchemaTypes.ObjectId],
-    ref: 'Testcase', // Links to the Testcase model
+    type: [TestcaseSchema], // Sử dụng TestCase schema làm subdocument
+    required: true,
   })
-  testcases: Types.Array<Types.ObjectId>;
+  testcases: Testcase[]; // Kiểu dữ liệu là mảng TestCase
 }
 
 export const ExerciseSchema = SchemaFactory.createForClass(Exercise);

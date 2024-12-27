@@ -4,16 +4,16 @@ import { Types } from "mongoose";
 
 @Schema()
 export class Study extends Exercise {
-  @Prop({ required: true })
-  language: string;
+
 
   @Prop()
   defaultCode: string;
 
   @Prop()
   solution: string;
+  
   @Prop({ type: Types.ObjectId, ref: "Course", required: true })
-  courseid: Types.ObjectId;
+  courseId: Types.ObjectId;
 }
 export type StudyDocument = Study & Document;
 

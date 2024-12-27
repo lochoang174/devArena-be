@@ -1,25 +1,57 @@
-import { IsEnum, IsNotEmpty, IsString, IsArray, IsOptional, ValidateNested } from 'class-validator';
-import { TestcaseDto } from './testcase.dto';
+import {
+  IsEnum,
+  IsNotEmpty,
+  IsString,
+  IsArray,
+  IsOptional,
+  ValidateNested,
+  IsObject,
+  IsIn,
+  Validate,
+} from 'class-validator';
 import { Type } from 'class-transformer';
-import { DifficultyEnum, LanguageEnum } from '../../schemas/exercise.schema';
+import { TestcaseDto } from './testcase.dto';
+import { DifficultyEnum, PredefinedTags } from '../../schemas/exercise.schema';
+
+// Custom validator to validate Map-like objects
+class IsVariableTypeMap {
+  validate(value: Record<string, string>): boolean {
+    const validTypes = ['string', 'number', 'array'];
+    return Object.values(value).every((type) => validTypes.includes(type));
+  }
+
+  defaultMessage(): string {
+    return 'Each variable type must be "string", "number", or "array"';
+  }
+}
 
 export class CreateExerciseDto {
   @IsString()
   @IsNotEmpty()
   title: string;
 
-  @IsEnum(LanguageEnum)
-  language: LanguageEnum;
-
   @IsString()
   content: string;
 
   @IsArray()
-  @IsOptional() // Cho phép trường này không bắt buộc
+  @IsOptional() // Optional field
+  @IsIn(PredefinedTags, { each: true, message: 'Tags must be predefined values' })
   tags?: string[];
 
   @IsEnum(DifficultyEnum)
   difficulty: DifficultyEnum;
+
+  @IsObject()
+  @Validate(IsVariableTypeMap, {
+    message: 'Each variable type must be "string", "number", or "array"',
+  })
+  variableTypes: Record<string, 'string' | 'number' | 'array'>; // Validates the Map structure
+
+  @IsString()
+  @IsIn(['string', 'number', 'array'], {
+    message: 'Output type must be "string", "number", or "array"',
+  })
+  outputType: 'string' | 'number' | 'array'; // Expected output type
 
   @IsArray() // Testcases is an array
   @ValidateNested({ each: true }) // Validate each item in the array as a `TestcaseDto`
