@@ -18,7 +18,6 @@ export class CourseStatus {
   @Prop({
     type: String,
     enum: ["completed", "in-progress"],
-
   })
   status: string;
 

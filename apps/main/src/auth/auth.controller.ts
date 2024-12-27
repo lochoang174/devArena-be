@@ -2,12 +2,13 @@ import { Controller, Post, Body, HttpCode, HttpStatus, Param, HttpException, Res
 import { AuthService } from './auth.service';
 import { SignupDTO } from './dto/signup.dto';
 import { Response } from 'express';  // Import the Express Response type
-import { CurrentUser } from '@app/common';
+import { CurrentUser, JwtAuthGuard } from '@app/common';
 import { LocalAuthGuard } from './guards/local-auth.guard';
 import { ResendDTO } from './dto/resend.dto';
 import { VerifyDTO } from './dto/verifyOtp.dto';
 import { Public, ResponseMessage } from '@app/common/decorators/customize';
 import { IUser } from '@app/common/types';
+import { MessagePattern, Payload } from '@nestjs/microservices';
 
 @Controller('auth')
 export class AuthController {
@@ -55,6 +56,11 @@ export class AuthController {
     return this.authService.logout();
   }
 
+
+  @MessagePattern('authenticate')
+  async authenticate(@Payload() data: any) {
+    return data.user;
+  }
   // @Get('verify/:jwt')  
   // @HttpCode(HttpStatus.CREATED)
   // async verifyUser(

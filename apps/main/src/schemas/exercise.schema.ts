@@ -1,6 +1,5 @@
 import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
-import { Document, Types } from 'mongoose';
-// import { Testcase, TestcaseSchema } from '../../testcase/schema/testcase.schema';
+import { Document, SchemaTypes, Types } from 'mongoose';
 
 export type ExerciseDocument = Exercise & Document;
 
@@ -29,15 +28,13 @@ export const PredefinedTags = [
   timestamps: true, // Adds createdAt and updatedAt fields
 })
 export class Exercise {
-  @Prop()
+  @Prop({ required: true })
   title: string;
-
-
 
   @Prop({ enum: DifficultyEnum, required: true })
   difficulty: DifficultyEnum;
 
-  @Prop()
+  @Prop({ required: true })
   content: string;
 
   @Prop({
@@ -50,11 +47,24 @@ export class Exercise {
   })
   tags: string[];
 
-
-  // @Prop({
-  //   type: [TestcaseSchema], // Embed the Testcase schema as an array
-  // })
-  // testcases: Types.Array<Testcase>;
+  @Prop({
+    type: Map,
+    of: { type: String }, // Specifies the data type for variable types
+    required: true,
+  })
+  variableTypes: Map<string, 'string' | 'number' | 'array'>; // Defines a hashmap for variable types
+  @Prop({
+    type: String,
+    required: true,
+    enum: ['string', 'number', 'array'],
+  })
+  outputType: 'string' | 'number' | 'array'; // Defines the expected type for the output
+  @Prop({
+    type: [SchemaTypes.ObjectId],
+    ref: 'Testcase', // Links to the Testcase model
+  })
+  testcases: Types.Array<Types.ObjectId>;
 }
 
 export const ExerciseSchema = SchemaFactory.createForClass(Exercise);
+

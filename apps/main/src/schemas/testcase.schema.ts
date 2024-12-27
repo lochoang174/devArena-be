@@ -1,6 +1,5 @@
 import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
-import { Document, SchemaTypes,  } from 'mongoose';
-
+import { Document, SchemaTypes, Types } from 'mongoose';
 export type TestcaseDocument = Testcase & Document;
 
 @Schema({
@@ -8,23 +7,22 @@ export type TestcaseDocument = Testcase & Document;
 })
 export class Testcase {
   @Prop({
-    type: Map,
-    of: SchemaTypes.Mixed,
+    type: [SchemaTypes.Mixed],
     required: true,
   })
-  input: Map<string, any>; // Map to store key-value pairs with dynamic data types
+  input: any[]; // Array to store variable values based on Exercise.variableTypes
 
   @Prop({
     type: SchemaTypes.Mixed,
     required: true,
   })
-  output: any; // Flexible data type for the output
+  output: any; // Flexible data type for the expected output
 
   @Prop({
     type: Boolean,
     default: false,
   })
-  hidden: boolean; // Boolean field for hidden status
+  status: boolean; // Indicates if the testcase passed or not
 }
 
 export const TestcaseSchema = SchemaFactory.createForClass(Testcase);

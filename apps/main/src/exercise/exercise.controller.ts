@@ -1,7 +1,9 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete } from '@nestjs/common';
+import { Controller, Get, Post, Body, Patch, Param, Delete, UseGuards } from '@nestjs/common';
 import { ExerciseService } from './exercise.service';
 import { CreateExerciseDto } from './dto/create-exercise.dto';
 import { UpdateExerciseDto } from './dto/update-exercise.dto';
+import { RolesGuard } from '../auth/guards/role.guard';
+import { JwtAuthGuard, Roles } from '@app/common';
 
 @Controller('exercise')
 export class ExerciseController {
@@ -12,10 +14,11 @@ export class ExerciseController {
   //   return this.exerciseService.create(createExerciseDto);
   // }
 
-  // @Get()
-  // findAll() {
-  //   return this.exerciseService.findAll();
-  // }
+  @Get()
+  @Roles(['admin','client'])
+  findAll() {
+    return this.exerciseService.findAll();
+  }
 
   // @Get(':id')
   // findOne(@Param('id') id: string) {

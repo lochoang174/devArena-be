@@ -1,6 +1,6 @@
-import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
-import { Document } from 'mongoose';
-import { User } from './user.schema';
+import { Prop, Schema, SchemaFactory } from "@nestjs/mongoose";
+import { Document } from "mongoose";
+import { User } from "./user.schema";
 
 export type CourseDocument = Course & Document;
 
@@ -19,7 +19,6 @@ export class Course {
 
   @Prop()
   description?: string; // Optional course description
-
 }
 
 export const CourseSchema = SchemaFactory.createForClass(Course);

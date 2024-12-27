@@ -7,19 +7,17 @@ import { Model } from "mongoose";
 
 @Injectable()
 export class UserService {
-  constructor(
-    @InjectModel("User") private userModel: Model<User>
-  ) {}
+  constructor(@InjectModel("User") private userModel: Model<User>) {}
   async create(createUserDto: User) {
     try {
-      console.log(createUserDto)
+      console.log(createUserDto);
       const user = new this.userModel(createUserDto);
       const savedUser = await user.save();
 
       // Chuyển đổi document thành object và loại bỏ password
       const userObject = savedUser.toObject();
       delete userObject.password;
-      
+
       return userObject;
     } catch (error) {
       if (error.code === 11000) {
@@ -41,7 +39,7 @@ export class UserService {
   }
 
   update(id: string) {
-    const user = this.userModel.findByIdAndUpdate()
+    const user = this.userModel.findByIdAndUpdate();
     return `This action updates a #${id} user`;
   }
   async verifyUser(userId: string) {
@@ -85,8 +83,10 @@ export class UserService {
       { new: true },
     );
   }
-  updateToken =async (refresh_token : string, id : string)=>{
-    return await this.userModel.updateOne({_id:id},{refreshToken:refresh_token})
-
- }
+  updateToken = async (refresh_token: string, id: string) => {
+    return await this.userModel.updateOne(
+      { _id: id },
+      { refreshToken: refresh_token },
+    );
+  };
 }

@@ -1,10 +1,12 @@
-import { Injectable, NotFoundException } from "@nestjs/common";
+import { Injectable, NotFoundException, UseGuards } from "@nestjs/common";
 import { CreateExerciseDto } from "./dto/create-exercise.dto";
 import { UpdateExerciseDto } from "./dto/update-exercise.dto";
 import { InjectModel } from "@nestjs/mongoose";
 import { Model } from "mongoose";
 import { StudyDocument } from "../schemas/study.schema";
 import { Exercise } from "../schemas/exercise.schema";
+import { RolesGuard } from "../auth/guards/role.guard";
+import { Roles } from "@app/common";
 
 @Injectable()
 export class ExerciseService {
@@ -23,9 +25,10 @@ export class ExerciseService {
   // /**
   //  * Find all exercises
   //  */
-  // async findAll(): Promise<Exercise[]> {
-  //   return this.exerciseModel.find().exec();
-  // }
+ 
+  async findAll() {
+    return "Success";
+  }
 
   // /**
   //  * Find an exercise by ID

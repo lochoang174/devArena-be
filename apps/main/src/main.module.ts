@@ -33,13 +33,6 @@ import { PassportModule } from '@nestjs/passport';
     DatabaseModule,
     MongooseModelsModule,
     AuthModule, UserModule,
-    // MongooseModule.forRootAsync({
-    //   imports: [ConfigModule],
-    //   useFactory: async (configService: ConfigService) => ({
-    //     uri: configService.get<string>('MONGODB_URI'),
-    //   }),
-    //   inject: [ConfigService],
-    // }),
     GraphQLModule.forRoot({
       autoSchemaFile: join(__dirname, 'schema.gql'), // Tạo schema tự động
       playground: true, // Bật GraphQL Playground (dành cho việc thử nghiệm API)

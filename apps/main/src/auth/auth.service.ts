@@ -62,8 +62,8 @@ export class AuthService {
     }
 
     // Remove password from response
-    const {role, _id , username,email} = user.toObject();
-    return {role, _id , username,email};
+    const { role, _id, username, email } = user.toObject();
+    return { role, _id, username, email };
   }
 
   async signup(signupDto: SignupDTO) {
@@ -83,7 +83,7 @@ export class AuthService {
         }
         // Add new provider to existing user
         existingUser.providers.push(provider);
-        await existingUser.save(); 
+        await existingUser.save();
         // await this.usersService.update(existingUser._id.toString(), {
         //   providers: existingUser.providers,
         // });
