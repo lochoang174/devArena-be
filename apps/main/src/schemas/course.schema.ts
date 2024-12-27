@@ -17,8 +17,6 @@ export class Course {
   @Prop({ required: true, default: 0 })
   totalExercises: number; // Total number of exercises in the course
 
-  @Prop()
-  description?: string; // Optional course description
 }
 
 export const CourseSchema = SchemaFactory.createForClass(Course);

@@ -3,7 +3,7 @@ import { ExerciseService } from './exercise.service';
 import { CreateExerciseDto } from './dto/create-exercise.dto';
 import { UpdateExerciseDto } from './dto/update-exercise.dto';
 import { RolesGuard } from '../auth/guards/role.guard';
-import { JwtAuthGuard, Roles } from '@app/common';
+import { JwtAuthGuard, ResponseMessage, Roles } from '@app/common';
 
 @Controller('exercise')
 export class ExerciseController {
@@ -15,7 +15,9 @@ export class ExerciseController {
   // }
 
   @Get()
+  @UseGuards(RolesGuard)
   @Roles(['admin','client'])
+  @ResponseMessage("Get exercise successfully!")
   findAll() {
     return this.exerciseService.findAll();
   }

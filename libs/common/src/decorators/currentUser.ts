@@ -9,7 +9,6 @@ export const CurrentUser = createParamDecorator(
       return request.user?.[data];
     }
 
-    // Return the whole user object if no specific field is requested
     return request.user;
   },
 );

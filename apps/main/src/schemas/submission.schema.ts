@@ -14,6 +14,7 @@ export class Submission {
     default: "pending",
   })
   status: string;
+  
   @Prop({
     required: false,
     type: Number,

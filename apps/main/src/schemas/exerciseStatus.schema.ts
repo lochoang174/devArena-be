@@ -22,11 +22,14 @@ export class ExerciseStatus {
   })
   status: string;
 
-  @Prop({ type: Number, min: 0, max: 100 })
-  score?: number;
+
+  // @Prop({ type: Number, min: 0, max: 100 })
+  // score?: number;
 
   @Prop({ type: [SubmissionSchema], default: [] })
   submission: Submission[]; // Array of submissions
+
+  
 }
 
 export const ExerciseStatusSchema =
