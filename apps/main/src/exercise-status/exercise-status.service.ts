@@ -1,26 +1,32 @@
-import { Injectable } from '@nestjs/common';
-import { CreateExerciseStatusDto } from './dto/create-exercise-status.dto';
-import { UpdateExerciseStatusDto } from './dto/update-exercise-status.dto';
+import { Injectable } from "@nestjs/common";
+import { CreateExerciseStatusDto } from "./dto/create-exercise-status.dto";
+import { UpdateExerciseStatusDto } from "./dto/update-exercise-status.dto";
+import { ExerciseStatusDocument } from "../schemas/exerciseStatus.schema";
+import { Model } from "mongoose";
+import { InjectModel } from "@nestjs/mongoose";
+import { ExerciseService } from "../exercise/exercise.service";
 
 @Injectable()
 export class ExerciseStatusService {
+  constructor(
+    @InjectModel("ExerciseStatus")
+    private exerciseStatusModel: Model<ExerciseStatusDocument>,
+    private readonly exerciseService: ExerciseService,
+  ) {}
   create(createExerciseStatusDto: CreateExerciseStatusDto) {
-    return 'This action adds a new exerciseStatus';
+    return "This action adds a new exerciseStatus";
   }
 
-  findAll() {
-    return `This action returns all exerciseStatus`;
-  }
+  async initExerciseStatus(userId: string, courseId: string) {
+    const exercises = await this.exerciseService.findAllByCourseId(courseId);
 
-  findOne(id: number) {
-    return `This action returns a #${id} exerciseStatus`;
-  }
+    const exerciseStatuses = exercises.map((exercise) => ({
+      exerciseId: exercise._id,
+      userId,
+      status: "NOT_STARTED",
+      submission: [],
+    }));
 
-  update(id: number, updateExerciseStatusDto: UpdateExerciseStatusDto) {
-    return `This action updates a #${id} exerciseStatus`;
-  }
-
-  remove(id: number) {
-    return `This action removes a #${id} exerciseStatus`;
+    return await this.exerciseStatusModel.insertMany(exerciseStatuses);
   }
 }

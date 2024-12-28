@@ -1,46 +1,10 @@
-import { ObjectType, Field, Int } from "@nestjs/graphql";
-import { VariableTypes } from "./variable-types.entity";
-import { TestCase } from "./test-case.entity";
+import { ObjectType, Field } from "@nestjs/graphql";
 
 
 @ObjectType()
 export class GraphExercise {
-  @Field()
+  @Field() // Đảm bảo trường title có kiểu String
   title: string;
 
-  @Field()
-  difficulty: string;
 
-  @Field()
-  content: string;
-
-  @Field(() => [String])
-  tags: string[];
-
-  @Field(() => VariableTypes)
-  variableTypes: VariableTypes;
-
-  @Field()
-  outputType: string;
-
-  @Field(() => [TestCase])
-  testcases: TestCase[];
-
-  @Field()
-  _id: string;
-
-  @Field()
-  "type": string;
-
-  @Field()
-  solution: string;
-
-  @Field()
-  courseId: string;
-
-  @Field()
-  createdAt: Date;
-
-  @Field()
-  updatedAt: Date;
 }

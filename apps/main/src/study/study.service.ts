@@ -1,7 +1,7 @@
 import { Injectable } from "@nestjs/common";
 import { InjectModel } from "@nestjs/mongoose";
 import { Study, StudyDocument } from "../schemas/study.schema";
-import { Model } from "mongoose";
+import { Model, Types } from "mongoose";
 import { CreateStudyDto } from "./dto/createStudy.dto";
 
 @Injectable()
@@ -10,7 +10,7 @@ export class StudyService {
     @InjectModel(Study.name) private studyModel: Model<StudyDocument>,
   ) {}
   async create(createStudyDto: CreateStudyDto): Promise<Study> {
-    const study = new this.studyModel({ ...createStudyDto });
+    const study = new this.studyModel({ _id: new Types.ObjectId(),...createStudyDto });
     return study.save();
   }
   async update(

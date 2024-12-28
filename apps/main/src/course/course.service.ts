@@ -17,11 +17,12 @@ export class CourseService {
     return createdCourse.save();
   }
   findAll() {
-    return `This action returns all course`;
+    return this.courseModel.find();
   }
 
-  findOne(id: number) {
-    return `This action returns a #${id} course`;
+  findOne(id: string) {
+    const course = this.courseModel.findById(id);
+    return course;
   }
 
   update(id: number, updateCourseDto: UpdateCourseDto) {

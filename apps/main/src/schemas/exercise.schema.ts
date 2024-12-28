@@ -1,9 +1,9 @@
 import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
-import { Document, SchemaTypes, Types } from 'mongoose';
+import { Document, Types } from 'mongoose';
+import { ObjectType, Field, ID, registerEnumType } from '@nestjs/graphql';
 import { Testcase, TestcaseSchema } from './testcase.schema';
 
-export type ExerciseDocument = Exercise & Document;
-
+// Register enums with GraphQL
 export enum LanguageEnum {
   Java = 'java',
   C = 'c',
@@ -16,29 +16,43 @@ export enum DifficultyEnum {
   Hard = 'Hard',
 }
 
+registerEnumType(DifficultyEnum, {
+  name: 'DifficultyEnum',
+  description: 'The difficulty levels for exercises',
+});
+
 export const PredefinedTags = [
-  "Array",
-  "Function",
-  "Loop",
-  "String",
-  "Recursion",
-  "Algorithm",
+  'Array',
+  'Function',
+  'Loop',
+  'String',
+  'Recursion',
+  'Algorithm',
 ];
 
+@ObjectType() // GraphQL ObjectType for Exercise
 @Schema({
   timestamps: true, // Adds createdAt and updatedAt fields
-  discriminatorKey: "type",
+  discriminatorKey: 'type',
 })
 export class Exercise {
+  @Field(() => ID) // ID type for GraphQL
+  @Prop({ required: true })
+  _id: Types.ObjectId;
+
+  @Field() // String type for GraphQL
   @Prop({ required: true })
   title: string;
 
+  @Field(() => DifficultyEnum) // Enum type for GraphQL
   @Prop({ enum: DifficultyEnum, required: true })
   difficulty: DifficultyEnum;
 
+  @Field() // String type for GraphQL
   @Prop({ required: true })
   content: string;
 
+  @Field(() => [String]) // Array of strings for GraphQL
   @Prop({
     type: [String],
     validate: {
@@ -49,24 +63,30 @@ export class Exercise {
   })
   tags: string[];
 
+  @Field(() => String) // JSON scalar for variable types
   @Prop({
     type: Map,
     of: { type: String }, // Specifies the data type for variable types
     required: true,
   })
-  variableTypes: Map<string, 'string' | 'number' | 'array'>; // Defines a hashmap for variable types
+  variableTypes: Record<string, 'string' | 'number' | 'array'>;
+
+  @Field(() => String) // String type for GraphQL
   @Prop({
     type: String,
     required: true,
     enum: ['string', 'number', 'array'],
   })
-  outputType: 'string' | 'number' | 'array'; // Defines the expected type for the output
+  outputType: 'string' | 'number' | 'array';
+
+  @Field(() => [Testcase]) // Array of Testcase type for GraphQL
   @Prop({
-    type: [TestcaseSchema], // Sử dụng TestCase schema làm subdocument
+    type: [TestcaseSchema], // Use TestCase schema as a subdocument
     required: true,
   })
-  testcases: Testcase[]; // Kiểu dữ liệu là mảng TestCase
+  testcases: Testcase[];
 }
 
-export const ExerciseSchema = SchemaFactory.createForClass(Exercise);
+export type ExerciseDocument = Exercise & Document;
 
+export const ExerciseSchema = SchemaFactory.createForClass(Exercise);

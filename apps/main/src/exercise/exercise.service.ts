@@ -7,16 +7,20 @@ import { StudyDocument } from "../schemas/study.schema";
 import { Exercise } from "../schemas/exercise.schema";
 import { RolesGuard } from "../auth/guards/role.guard";
 import { Roles } from "@app/common";
+import { CourseService } from "../course/course.service";
 
 @Injectable()
 export class ExerciseService {
   constructor(
     @InjectModel("Study") private exerciseModel: Model<StudyDocument>,
+    private readonly courseService: CourseService,
+    
   ) {}
 
-  /**
-   * Create a new exercise
-   */
+  async findAllByCourseId(courseId: string) {
+    return this.exerciseModel.find({ courseId });
+  }
+
   async create(createExerciseDto: CreateExerciseDto): Promise<Exercise> {
     const newExercise = new this.exerciseModel({});
     return newExercise.save();

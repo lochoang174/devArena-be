@@ -50,8 +50,9 @@ export class UserService {
     return `This action returns all user`;
   }
 
-  findOne(id: number) {
-    return `This action returns a #${id} user`;
+  findOne(id: string) {
+    const user = this.userModel.findById(id);
+    return user;
   }
 
   update(id: string) {

@@ -7,28 +7,7 @@ import { UpdateExerciseStatusDto } from './dto/update-exercise-status.dto';
 export class ExerciseStatusController {
   constructor(private readonly exerciseStatusService: ExerciseStatusService) {}
 
-  @Post()
-  create(@Body() createExerciseStatusDto: CreateExerciseStatusDto) {
-    return this.exerciseStatusService.create(createExerciseStatusDto);
-  }
 
-  @Get()
-  findAll() {
-    return this.exerciseStatusService.findAll();
-  }
 
-  @Get(':id')
-  findOne(@Param('id') id: string) {
-    return this.exerciseStatusService.findOne(+id);
-  }
 
-  @Patch(':id')
-  update(@Param('id') id: string, @Body() updateExerciseStatusDto: UpdateExerciseStatusDto) {
-    return this.exerciseStatusService.update(+id, updateExerciseStatusDto);
-  }
-
-  @Delete(':id')
-  remove(@Param('id') id: string) {
-    return this.exerciseStatusService.remove(+id);
-  }
 }

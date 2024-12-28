@@ -1,7 +1,12 @@
-
-import { Roles } from '@app/common';
-import { Injectable, CanActivate, ExecutionContext, ForbiddenException } from '@nestjs/common';
-import { Reflector } from '@nestjs/core';
+import { Roles } from "@app/common";
+import {
+  Injectable,
+  CanActivate,
+  ExecutionContext,
+  ForbiddenException,
+} from "@nestjs/common";
+import { Reflector } from "@nestjs/core";
+import { GqlExecutionContext } from "@nestjs/graphql";
 
 @Injectable()
 export class RolesGuard implements CanActivate {
@@ -12,10 +17,26 @@ export class RolesGuard implements CanActivate {
     if (!roles) {
       return true;
     }
-    const request = context.switchToHttp().getRequest();
-    const user = request.user;
-    console.log(user);
-    if(roles.includes(user.role)) return true;
-    else throw new ForbiddenException('You are not authorized to access this resource');
+
+    // Kiểm tra xem context là HTTP hay GraphQL
+    const contextType = context.getType();
+    let user;
+
+    if (contextType === "http") {
+      user = context.switchToHttp().getRequest().user;
+    } else {
+      // Trường hợp GraphQL
+      const gqlContext = GqlExecutionContext.create(context);
+      user = gqlContext.getContext().req.user;
+    }
+
+    if (!user) {
+      throw new ForbiddenException("User not found in request");
+    }
+
+    if (roles.includes(user.role)) return true;
+    throw new ForbiddenException(
+      "You are not authorized to access this resource",
+    );
   }
 }

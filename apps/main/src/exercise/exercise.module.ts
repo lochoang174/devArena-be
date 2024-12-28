@@ -4,6 +4,7 @@ import { ExerciseController } from "./exercise.controller";
 import { Study, StudySchema } from "../schemas/study.schema";
 import { DatabaseModule } from "@app/common";
 import { getModelToken } from "@nestjs/mongoose";
+import { CourseModule } from "../course/course.module";
 
 export const EXERCISE_MODEL = "ExerciseModel";
 export const STUDY_MODEL = "StudyModel";
@@ -21,18 +22,10 @@ export const STUDY_MODEL = "StudyModel";
   controllers: [ExerciseController],
   providers: [
     ExerciseService,
-    // {
-    //   provide: EXERCISE_MODEL,
-    //   useFactory: (exerciseModel) => exerciseModel,
-    //   inject: [getModelToken(EXERCISE_MODEL)],
-    // },
-    // {
-    //   provide: STUDY_MODEL,
-    //   useFactory: (exerciseModel) => exerciseModel.discriminators[STUDY_MODEL],
-    //   inject: [getModelToken(EXERCISE_MODEL)],
-    // },
+
   ],
-  // imports: [DatabaseModule, DatabaseModule.forFeature(MODELS)],
-  // exports: [DatabaseModule, ExerciseService, EXERCISE_MODEL, STUDY_MODEL],
+  imports: [CourseModule],
+  exports: [ExerciseService],
+
 })
 export class ExerciseModule {}

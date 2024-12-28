@@ -1,15 +1,22 @@
 import { Resolver, Query, Args } from "@nestjs/graphql";
 import { StudyService } from "../study/study.service";
 import { GraphExercise } from "./entities/graph-exercise.entity";
-import { Public } from "@app/common";
+import { Public, Roles } from "@app/common";
+import { Study } from "../schemas/study.schema";
+import { UseGuards } from "@nestjs/common";
+import { RolesGuard } from "../auth/guards/role.guard";
 
 @Resolver(() => GraphExercise)
 export class GraphExerciseResolver {
+
+
   constructor(private readonly studyService: StudyService) {}
-  @Public()
-  @Query(() => [GraphExercise], { name: "graphExercises" })
-  async findAll() {
-    return this.studyService.findAll();
+  @UseGuards(RolesGuard)
+  @Roles(['admin'])
+  @Query(() => [Study], { name: "findAll" })
+  async findAll(): Promise<Study[]> {
+
+    return this.studyService.findAll();  // Adjust this if you want to return the whole array
   }
 
   @Public()
@@ -18,10 +25,6 @@ export class GraphExerciseResolver {
     return this.studyService.findById(id);
   }
 
-  // @Query(() => [GraphExercise], { name: "exercisesByDifficulty" })
-  // async findByDifficulty(@Args("difficulty") difficulty: string) {
-  //   return this.studyService.findExercisesByDifficulty(difficulty);
-  // }
   @Public()
   @Query(() => [GraphExercise], { name: "exercisesByCourse" })
   async findByCourse(@Args("courseId") courseId: string) {

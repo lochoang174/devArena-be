@@ -14,7 +14,8 @@ export const STUDY_MODEL = "StudyModel";
 export const USER_MODEL = "UserModel";
 export const ALGORITHM_MODEL = "AlgorithmModel";
 export const COURSE_MODEL = "CourseModel";
-
+export const COURSE_STATUS_MODEL = "CourseStatusModel";
+export const EXERCISE_STATUS_MODEL = "ExerciseStatusModel";
 const MODELS = [
   {
     name: "ExerciseModel",
@@ -25,7 +26,9 @@ const MODELS = [
     ],
   },
   { name: USER_MODEL, schema: UserSchema },
-  {name: COURSE_MODEL, schema: CourseSchema}
+  { name: COURSE_MODEL, schema: CourseSchema },
+  { name: COURSE_STATUS_MODEL, schema: CourseStatusSchema },
+  { name: EXERCISE_STATUS_MODEL, schema: ExerciseStatusSchema },
 ];
 
 @Global()
@@ -58,8 +61,26 @@ const MODELS = [
       useFactory: (courseModel) => courseModel,
       inject: [getModelToken(COURSE_MODEL)],
     },
+    {
+      provide: COURSE_STATUS_MODEL,
+      useFactory: (courseStatusModel) => courseStatusModel,
+      inject: [getModelToken(COURSE_STATUS_MODEL)],
+    },
+    {
+      provide: EXERCISE_STATUS_MODEL,
+      useFactory: (exerciseStatusModel) => exerciseStatusModel,
+      inject: [getModelToken(EXERCISE_STATUS_MODEL)],
+    },
   ],
   imports: [DatabaseModule, DatabaseModule.forFeature(MODELS)],
-  exports: [DatabaseModule, EXERCISE_MODEL, STUDY_MODEL, USER_MODEL, COURSE_MODEL],
+  exports: [
+    DatabaseModule,
+    EXERCISE_MODEL,
+    STUDY_MODEL,
+    USER_MODEL,
+    COURSE_MODEL,
+    COURSE_STATUS_MODEL,
+    EXERCISE_STATUS_MODEL,
+  ],
 })
 export class MongooseModelsModule {}
