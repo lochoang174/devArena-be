@@ -7,18 +7,18 @@ export class CreateStudyDto extends CreateExerciseDto {
 
   @IsString()
   @IsNotEmpty()
-  sampleCode: string;
+  defaultCode: string;
 
   @IsString()
   @IsNotEmpty()
   solution: string;
 
-  
+
   @IsMongoId()
   @IsNotEmpty()
   courseId: Types.ObjectId;
 
 
 
-  
+
 }

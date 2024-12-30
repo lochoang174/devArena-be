@@ -41,18 +41,6 @@ export class CreateExerciseDto {
   @IsEnum(DifficultyEnum)
   difficulty: DifficultyEnum;
 
-  @IsObject()
-  @Validate(IsVariableTypeMap, {
-    message: 'Each variable type must be "string", "number", or "array"',
-  })
-  variableTypes: Record<string, 'string' | 'number' | 'array'>; // Validates the Map structure
-
-  @IsString()
-  @IsIn(['string', 'number', 'array'], {
-    message: 'Output type must be "string", "number", or "array"',
-  })
-  outputType: 'string' | 'number' | 'array'; // Expected output type
-
   @IsArray() // Testcases is an array
   @ValidateNested({ each: true }) // Validate each item in the array as a `TestcaseDto`
   @Type(() => TestcaseDto) // Transform plain objects into TestcaseDto instances
