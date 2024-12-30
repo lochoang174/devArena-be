@@ -63,21 +63,6 @@ export class Exercise {
   })
   tags: string[];
 
-  @Field(() => String) // JSON scalar for variable types
-  @Prop({
-    type: Map,
-    of: { type: String }, // Specifies the data type for variable types
-    required: true,
-  })
-  variableTypes: Record<string, 'string' | 'number' | 'array'>;
-
-  @Field(() => String) // String type for GraphQL
-  @Prop({
-    type: String,
-    required: true,
-    enum: ['string', 'number', 'array'],
-  })
-  outputType: 'string' | 'number' | 'array';
 
   @Field(() => [Testcase]) // Array of Testcase type for GraphQL
   @Prop({

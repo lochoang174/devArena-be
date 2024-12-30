@@ -6,9 +6,7 @@ import { GraphQLJSON } from 'graphql-type-json';
 export type TestcaseDocument = Testcase & Document;
 
 @ObjectType()
-@Schema({
-  timestamps: true,
-})
+@Schema()
 export class Testcase {
   @Field(() => GraphQLJSON, { description: 'Array to store variable values based on Exercise.variableTypes' })
   @Prop({
