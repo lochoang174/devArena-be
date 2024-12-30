@@ -9,11 +9,9 @@ export type ExerciseStatusDocument = ExerciseStatus & Document;
 
 @Schema({ timestamps: true })
 export class ExerciseStatus {
-  @Prop({ type: Types.ObjectId, ref: "Exercise", required: true })
+  @Prop({ type: Types.ObjectId, ref: "ExerciseModel", required: true })
   exerciseId: Types.ObjectId;
 
-  @Prop({ type: Types.ObjectId, ref: "User", required: true })
-  userId: Types.ObjectId;
 
   @Prop({
     type: String,
@@ -23,8 +21,8 @@ export class ExerciseStatus {
   status: string;
 
 
-  // @Prop({ type: Number, min: 0, max: 100 })
-  // score?: number;
+  @Prop({ type: Number, min: 0, max: 100 })
+  score?: number;
 
   @Prop({ type: [SubmissionSchema], default: [] })
   submission: Submission[]; // Array of submissions

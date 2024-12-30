@@ -17,16 +17,28 @@ export class ExerciseStatusService {
     return "This action adds a new exerciseStatus";
   }
 
-  async initExerciseStatus(userId: string, courseId: string) {
+  // async initExerciseStatus(userId: string, courseId: string) {
+  //   const exercises = await this.exerciseService.findAllByCourseId(courseId);
+
+  //   const exerciseStatuses = exercises.map((exercise) => ({
+  //     exerciseId: exercise._id,
+  //     userId,
+  //     status: "NOT_STARTED",
+  //     submission: [],
+  //   }));
+
+  //   return await this.exerciseStatusModel.insertMany(exerciseStatuses);
+  // }
+
+  async findAllByUserAndCourse(userId: string, courseId: string) {
     const exercises = await this.exerciseService.findAllByCourseId(courseId);
+    const exerciseIds = exercises.map((exercise) => exercise._id);
 
-    const exerciseStatuses = exercises.map((exercise) => ({
-      exerciseId: exercise._id,
-      userId,
-      status: "NOT_STARTED",
-      submission: [],
-    }));
-
-    return await this.exerciseStatusModel.insertMany(exerciseStatuses);
+    return await this.exerciseStatusModel
+      .find({
+        userId: userId,
+        exerciseId: { $in: exerciseIds },
+      })
+      .exec();
   }
 }

@@ -2,6 +2,7 @@ import { Prop, Schema, SchemaFactory } from "@nestjs/mongoose";
 import mongoose, { HydratedDocument } from "mongoose";
 import { Course } from "./course.schema";
 import { User } from "./user.schema";
+import { ExerciseStatus } from "./exerciseStatus.schema";
 
 export type CourseStatusDocument = HydratedDocument<CourseStatus>;
 
@@ -9,10 +10,10 @@ export type CourseStatusDocument = HydratedDocument<CourseStatus>;
   timestamps: true,
 })
 export class CourseStatus {
-  @Prop({ type: mongoose.Schema.Types.ObjectId, ref: "User", required: true })
+  @Prop({ type: mongoose.Schema.Types.ObjectId, ref: "UserModel", required: true })
   userId: User;
 
-  @Prop({ type: mongoose.Schema.Types.ObjectId, ref: "Course", required: true })
+  @Prop({ type: mongoose.Schema.Types.ObjectId, ref: "CourseModel", required: true })
   courseId: Course;
 
   @Prop({
@@ -29,6 +30,11 @@ export class CourseStatus {
 
   @Prop({ type: Date })
   completedAt: Date;
+   @Prop([{
+    exerciseId: { type: mongoose.Schema.Types.ObjectId, ref: 'ExerciseModel', required: true },
+
+  }])
+  exerciseStatuses: ExerciseStatus[];
 }
 
 export const CourseStatusSchema = SchemaFactory.createForClass(CourseStatus);

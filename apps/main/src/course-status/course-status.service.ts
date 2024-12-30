@@ -8,6 +8,7 @@ import { InjectModel } from "@nestjs/mongoose";
 import { CourseService } from "../course/course.service";
 import { UserService } from "../user/user.service";
 import { ExerciseStatusService } from "../exercise-status/exercise-status.service";
+import { ExerciseService } from "../exercise/exercise.service";
 
 @Injectable()
 export class CourseStatusService {
@@ -17,6 +18,7 @@ export class CourseStatusService {
     private readonly courseService: CourseService,
     private readonly userService: UserService,
     private readonly exerciseStatusService: ExerciseStatusService,
+    private readonly exerciseService: ExerciseService,
   ) {}
 
   async checkAndCreateCourseStatus(userId: string, courseId: string) {
@@ -31,9 +33,16 @@ export class CourseStatusService {
         return existingStatus;
       }
 
+      // Lấy danh sách exercises của course
+      const exercises = await this.exerciseService.findAllByCourseId(courseId);
 
+      // Tạo mảng exercise statuses
+      const exerciseStatuses = exercises.map((exercise) => ({
+        exerciseId: exercise._id,
+        progress: 0,
+      }));
 
-      // Tạo mới courseStatus
+      // Tạo mới courseStatus với mảng exercise statuses
       const newCourseStatus = new this.courseStatusModel({
         userId,
         courseId,
@@ -41,8 +50,9 @@ export class CourseStatusService {
         status: "in-progress",
         enrolledAt: new Date(),
         completedAt: null,
+        exerciseStatuses, // Thêm mảng exercise statuses vào đây
       });
-      this.exerciseStatusService.initExerciseStatus(userId, courseId);
+
       return await newCourseStatus.save();
     } catch (error) {
       throw new Error(`Failed to check/create course status: ${error.message}`);
@@ -51,16 +61,28 @@ export class CourseStatusService {
 
   async getUserCourseStatuses(userId: string) {
     try {
+      console.log("userId", userId);
       const courseStatuses = await this.courseStatusModel
-        .find({ userId })
+        .find({ userId }, { exerciseStatuses: 0 , userId: 0, completedAt:0
+          
+        })
         .populate("courseId") // Nếu bạn muốn lấy thêm thông tin của course
-        .exec();
+        .exec(); 
 
       return courseStatuses;
     } catch (error) {
       throw new Error(`Failed to get user course statuses: ${error.message}`);
     }
-  }
+  } 
+  async getCourseStatusById(courseStatusId: string) {
+    return await this.courseStatusModel
+      .findById(courseStatusId)
+      .populate({
+        path: "exerciseStatuses.exerciseId",
+        model: "ExerciseModel",
+      })
+      .populate("courseId") // Added courseId population
 
- 
+      .exec();
+  }
 }

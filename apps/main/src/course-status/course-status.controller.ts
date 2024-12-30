@@ -27,4 +27,8 @@ export class CourseStatusController {
   async getUserCourseStatuses(@Param("userId") userId: string) {
     return await this.courseStatusService.getUserCourseStatuses(userId);
   }
+  @Get(":courseStatusId")
+  async getCourseStatusById(@Param("courseStatusId") courseStatusId: string) {
+    return await this.courseStatusService.getCourseStatusById(courseStatusId);
+  }
 }

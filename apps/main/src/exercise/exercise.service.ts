@@ -4,7 +4,7 @@ import { UpdateExerciseDto } from "./dto/update-exercise.dto";
 import { InjectModel } from "@nestjs/mongoose";
 import { Model } from "mongoose";
 import { StudyDocument } from "../schemas/study.schema";
-import { Exercise } from "../schemas/exercise.schema";
+import { Exercise, ExerciseDocument } from "../schemas/exercise.schema";
 import { RolesGuard } from "../auth/guards/role.guard";
 import { Roles } from "@app/common";
 import { CourseService } from "../course/course.service";
@@ -12,7 +12,7 @@ import { CourseService } from "../course/course.service";
 @Injectable()
 export class ExerciseService {
   constructor(
-    @InjectModel("Study") private exerciseModel: Model<StudyDocument>,
+    @InjectModel("Exercise") private exerciseModel: Model<ExerciseDocument>,
     private readonly courseService: CourseService,
     
   ) {}

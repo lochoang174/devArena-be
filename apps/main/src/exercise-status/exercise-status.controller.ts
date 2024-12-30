@@ -6,7 +6,10 @@ import { UpdateExerciseStatusDto } from './dto/update-exercise-status.dto';
 @Controller('exercise-status')
 export class ExerciseStatusController {
   constructor(private readonly exerciseStatusService: ExerciseStatusService) {}
-
+  @Get("course/:courseId/user/:userId")
+  async getExerciseStatus(@Param("courseId") courseId: string, @Param("userId") userId: string) {
+    return await this.exerciseStatusService.findAllByUserAndCourse(userId,courseId );
+  }
 
 
 
