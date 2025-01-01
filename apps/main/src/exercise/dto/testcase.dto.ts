@@ -9,5 +9,5 @@ export class TestcaseDto {
   output: any; // Output can be any type
 
   @IsBoolean()
-  status: boolean;
+  hidden: boolean;
 }

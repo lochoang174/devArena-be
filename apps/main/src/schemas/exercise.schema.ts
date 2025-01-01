@@ -70,6 +70,12 @@ export class Exercise {
     required: true,
   })
   testcases: Testcase[];
+
+  //score 
+  @Field(() => Number)
+  @Prop({ required: true })
+  score: number;
+
 }
 
 export type ExerciseDocument = Exercise & Document;

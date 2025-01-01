@@ -8,6 +8,7 @@ import {
   IsObject,
   IsIn,
   Validate,
+  IsNumber,
 } from 'class-validator';
 import { Type } from 'class-transformer';
 import { TestcaseDto } from './testcase.dto';
@@ -45,4 +46,8 @@ export class CreateExerciseDto {
   @ValidateNested({ each: true }) // Validate each item in the array as a `TestcaseDto`
   @Type(() => TestcaseDto) // Transform plain objects into TestcaseDto instances
   testcases: TestcaseDto[];
+
+  @IsNotEmpty()
+  @IsNumber()
+  score: number;
 }

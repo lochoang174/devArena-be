@@ -27,7 +27,7 @@ export class Testcase {
     type: Boolean,
     default: false,
   })
-  status: boolean;
+  hidden: boolean;
 }
 
 export const TestcaseSchema = SchemaFactory.createForClass(Testcase);
