@@ -8,9 +8,9 @@ import { CreateStudyDto } from "./dto/createStudy.dto";
 export class StudyService {
   constructor(
     @InjectModel(Study.name) private studyModel: Model<StudyDocument>,
-  ) {}
+  ) { }
   async create(createStudyDto: CreateStudyDto): Promise<Study> {
-    const study = new this.studyModel({ _id: new Types.ObjectId(),...createStudyDto });
+    const study = new this.studyModel({ _id: new Types.ObjectId(), ...createStudyDto });
     return study.save();
   }
    async findSolutionCode(exerciseId:string){
