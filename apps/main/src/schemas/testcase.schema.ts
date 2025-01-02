@@ -13,7 +13,7 @@ export class Testcase {
     type: SchemaTypes.Mixed,
     required: true,
   })
-  input: any;
+  input: [any];
 
   @Field(() => GraphQLJSON, { description: 'Flexible data type for the expected output' })
   @Prop({
@@ -27,7 +27,7 @@ export class Testcase {
     type: Boolean,
     default: false,
   })
-  status: boolean;
+  hidden: boolean;
 }
 
 export const TestcaseSchema = SchemaFactory.createForClass(Testcase);

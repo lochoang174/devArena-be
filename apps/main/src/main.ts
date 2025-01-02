@@ -22,11 +22,10 @@ async function bootstrap() {
   app.useGlobalGuards(new JwtAuthGuard(reflector));
 
   app.enableCors({
-    origin: configService.get("FRONTEND_URL"), // Specify the allowed origin(s)
-    methods: "GET,HEAD,PUT,PATCH,POST,DELETE", // Allowed methods
-    credentials: true, // Include credentials (cookies, authorization headers, etc.)
-  });
-  app.useGlobalPipes(new ValidationPipe());
+    origin: '*',
+    methods: 'GET,HEAD,PUT,PATCH,POST,DELETE,OPTIONS',
+    allowedHeaders: 'Content-Type, Accept, Authorization',
+  });  app.useGlobalPipes(new ValidationPipe());
   app.setGlobalPrefix("api");
   app.useGlobalInterceptors(new TransformInterceptor(reflector));
 

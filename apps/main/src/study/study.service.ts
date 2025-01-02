@@ -13,6 +13,11 @@ export class StudyService {
     const study = new this.studyModel({ _id: new Types.ObjectId(),...createStudyDto });
     return study.save();
   }
+   async findSolutionCode(exerciseId:string){
+    const id = new Types.ObjectId(exerciseId); // Convert exerciseId to ObjectId if it's a string
+    const select = await this.studyModel.findOne({ _id: id }).lean();    
+      return  select.solution
+    }
   async update(
     id: string,
     updateStudyDto: Partial<CreateStudyDto>,

@@ -22,6 +22,7 @@ import { CourseModule } from "./course/course.module";
 import { CourseStatusModule } from "./course-status/course-status.module";
 import { ExerciseStatusModule } from "./exercise-status/exercise-status.module";
 import { PassportModule } from "@nestjs/passport";
+import { SocketModule } from './socket/socket.module';
 import GraphQLJSON from "graphql-type-json";
 
 @Module({
@@ -56,6 +57,7 @@ import GraphQLJSON from "graphql-type-json";
     CourseModule,
     CourseStatusModule,
     ExerciseStatusModule,
+    SocketModule,
   ],
   controllers: [MainController],
   providers: [MainService],

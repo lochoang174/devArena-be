@@ -20,7 +20,7 @@ export class ExerciseService {
   async findAllByCourseId(courseId: string) {
     return this.exerciseModel.find({ courseId });
   }
-
+ 
   async create(createExerciseDto: CreateExerciseDto): Promise<Exercise> {
     const newExercise = new this.exerciseModel({});
     return newExercise.save();
