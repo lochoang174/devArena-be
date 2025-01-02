@@ -13,11 +13,12 @@ import { StudyService } from "./study.service";
 import { CreateStudyDto } from "./dto/createStudy.dto";
 import { RolesGuard } from "../auth/guards/role.guard";
 import { Roles } from "@app/common";
+import { combineLatest } from "rxjs";
 
 
 @Controller("study")
 export class StudyController {
-  constructor(private readonly studyService: StudyService) {}
+  constructor(private readonly studyService: StudyService) { }
 
   @Post()
   @UseGuards(RolesGuard)
