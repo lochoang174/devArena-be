@@ -1,16 +1,38 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete } from '@nestjs/common';
+import { Controller, Get, Post, Body, Patch, Param, Delete, Inject, OnModuleInit } from '@nestjs/common';
 import { UserService } from './user.service';
 import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
+import { ClientGrpc } from '@nestjs/microservices';
+import { COMPILE_PACKAGE_NAME, COMPILE_SERVICE_NAME, CompileServiceClient, Public, TestCase } from '@app/common';
 
 @Controller('user')
-export class UserController {
-  constructor(private readonly userService: UserService) {}
-
-  @Post()
-  create(@Body() createUserDto: CreateUserDto) {
-    // return this.userService.create(createUserDto);
+export class UserController implements OnModuleInit{
+  private compileService:CompileServiceClient 
+  constructor(
+    private readonly userService: UserService,
+    @Inject(COMPILE_SERVICE_NAME) private client: ClientGrpc
+  ) {}
+  onModuleInit() {
+    this.compileService =
+      this.client.getService<CompileServiceClient>(COMPILE_SERVICE_NAME);
   }
+  @Post()
+  @Public()
+  async create() {
+    const tc: TestCase[] = [
+      { inputs: ['3', '3'] }, // Đúng theo định dạng TestCase
+    ];
+  
+    try {
+      const response = await this.compileService.testCompile({ code: "abc", testcases: tc })
+      console.log('Response:', response);
+      return response;
+    } catch (error) { 
+      console.error('Error:', error);
+      throw error; // Hoặc trả lỗi tuỳ ý
+    }
+  }
+  
 
   @Get()
   findAll() {

@@ -1,8 +1,24 @@
 import { NestFactory } from '@nestjs/core';
 import { CompileModule } from './compile.module';
+import { MicroserviceOptions, Transport } from '@nestjs/microservices';
+import { join } from 'path';
+import { ConfigService } from "@nestjs/config";
+import { COMPILE_PACKAGE_NAME, COMPILE_SERVICE_NAME } from '@app/common';
 
 async function bootstrap() {
-  const app = await NestFactory.create(CompileModule);
-  await app.listen(process.env.port ?? 3000);
+
+  const app = await NestFactory.createMicroservice<MicroserviceOptions>(CompileModule, {
+    transport: Transport.GRPC,
+    options: {
+      
+      package: 'compile',
+      protoPath: join(__dirname, '../../../proto/compile.proto'), // Đường dẫn đúng
+    },
+  });  
+
+  // const port = configService.get<number>("PORT");
+
+  await app.listen();
 }
 bootstrap();
+  

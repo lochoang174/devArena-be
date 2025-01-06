@@ -8,7 +8,7 @@ export class SocketService {
   private executions: Map<string, any> = new Map();  // Map to track executions by uniqueId
   private clients: Map<string, string> = new Map();   // Map to track client uniqueId
 
-  async startCompilation(code: string, uniqueId: string, testCase: string[]) {
+  async startCompilation(code: string, testCase: string[]) {
     try {
       const tempDir = path.join(__dirname, '../temp');
       await fs.mkdir(tempDir, { recursive: true });

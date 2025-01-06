@@ -24,9 +24,12 @@ import { ExerciseStatusModule } from "./exercise-status/exercise-status.module";
 import { PassportModule } from "@nestjs/passport";
 import { SocketModule } from './socket/socket.module';
 import GraphQLJSON from "graphql-type-json";
+import { ClientsModule, Transport } from "@nestjs/microservices";
+import { COMPILE_PACKAGE_NAME } from "@app/common";
 
 @Module({
   imports: [
+
     ConfigModule.forRoot({
       isGlobal: true,
       envFilePath: join(__dirname, "../../../apps/main/.env"),
@@ -58,8 +61,10 @@ import GraphQLJSON from "graphql-type-json";
     CourseStatusModule,
     ExerciseStatusModule,
     SocketModule,
+  
   ],
   controllers: [MainController],
   providers: [MainService],
+
 })
 export class MainModule {}

@@ -10,6 +10,8 @@
     "format": "prettier --write \"apps/**/*.ts\" \"libs/**/*.ts\"",
     "start": "nest start",
     "start:dev": "nest start --watch",
+    "start:compile": "nest start compile --watch",
+
     "start:debug": "nest start --debug --watch",
     "start:prod": "node dist/apps/dev-arena-be/main",
     "lint": "eslint \"{src,apps,libs,test}/**/*.ts\" --fix",
@@ -21,6 +23,8 @@
   },
   "dependencies": {
     "@apollo/server": "^4.11.2",
+    "@grpc/grpc-js": "^1.12.5",
+    "@grpc/proto-loader": "^0.7.13",
     "@nestjs/apollo": "^12.2.2",
     "@nestjs/common": "^10.0.0",
     "@nestjs/config": "^3.3.0",
@@ -70,6 +74,7 @@
     "ts-jest": "^29.1.0",
     "ts-loader": "^9.4.3",
     "ts-node": "^10.9.1",
+    "ts-proto": "^2.6.1",
     "tsconfig-paths": "^4.2.0",
     "typescript": "^5.1.3"
   },
