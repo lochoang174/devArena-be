@@ -10,14 +10,14 @@ async function bootstrap() {
   const app = await NestFactory.create(MainModule);
   const configService = app.get(ConfigService);
 
-  app.connectMicroservice({
-    name: MAIN_SERVICE,
-    transport: Transport.TCP,
-    options: {
-      host: "0.0.0.0",
-      port: configService.get("TCP_PORT"),
-    },
-  });
+  // app.connectMicroservice({
+  //   name: MAIN_SERVICE,
+  //   transport: Transport.TCP,
+  //   options: {
+  //     host: "0.0.0.0",
+  //     port: configService.get("TCP_PORT"),
+  //   },
+  // });
   const reflector = app.get(Reflector);
   app.useGlobalGuards(new JwtAuthGuard(reflector));
 

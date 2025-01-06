@@ -12,6 +12,8 @@ import { StudyService } from '../study/study.service';
   },
   path: '/socket.io/',
   transports: ['websocket', 'polling'],
+
+  
 })
 export class SocketGateway implements OnGatewayConnection {
   @WebSocketServer() server: Server;
@@ -29,105 +31,8 @@ export class SocketGateway implements OnGatewayConnection {
 
   }
 
-  // @SubscribeMessage('compile')
-  // async handleCompile(
-  //   @MessageBody() data: 
-  //   { 
-  //     code: string; testCases: string[][],
-  //     exerciseId:string
-  //    },
-  //   @ConnectedSocket() client: Socket,
-  // ) {
-  //   const uniqueId = client.data.uniqueId;
-  //   if (!uniqueId) {
-  //     client.emit('error', 'UniqueId is required for compilation');
-  //     return;
-  //   }
-  //   const codeSolution = await this.studyService.findSolutionCode(data.exerciseId)
-  //   let result =[]
-  //   for (let i = 0; i < data.testCases.length; i++) {
-  //     const testCase = data.testCases[i];
-  //     const testCaseId = i + 1; // Số thứ tự test case
-
-  //     try {
-  //       // Gọi startCompilation cho từng test case
-  //       const process = await this.socketService.startCompilation(
-  //         codeSolution,
-  //         uniqueId, // Dùng uniqueId chung
-  //         testCase,
-  //       );
-
-  //       // Lắng nghe kết quả từ stdout
-  //       process.stdout.on('data', (data) => {
-  //         const output = data.toString();
-  //         result.push(output)
-  //         // client.emit('output', output);
-  //       });
-
-  //       // Lắng nghe lỗi từ stderr
-       
-      
-  //     } catch (error) {
-  //       // Gửi lỗi nếu một test case thất bại
-  //       client.emit('error', {
-  //         testCaseId,
-  //         error: error.message,
-  //       });
-  //     }
-  //   }
-  //   try {
-  //     // Thông báo bắt đầu quá trình biên dịch
-  //     client.emit('compiling', 'Đang biên dịch...');
-      
-  //     for (let i = 0; i < data.testCases.length; i++) {
-  //       const testCase = data.testCases[i];
-  //       const testCaseId = i + 1; // Số thứ tự test case
   
-  //       try {
-  //         // Gọi startCompilation cho từng test case
-  //         const process = await this.socketService.startCompilation(
-  //           data.code,
-  //           uniqueId, // Dùng uniqueId chung
-  //           testCase,
-  //         );
-  
-  //         // Lắng nghe kết quả từ stdout
-  //         process.stdout.on('data', (data) => {
-  //           const output = data.toString();
-  //           client.emit('output', output);
-  //         });
-  
-  //         // Lắng nghe lỗi từ stderr
-  //         process.stderr.on('data', (data) => {
-  //           const error = data.toString();
-  //           client.emit('error', {
-  //             testCaseId,
-  //             error,
-  //           });
-  //         });
-  
-  //         // Khi hoàn tất, gửi thông báo
-  //         process.on('close', (code) => {
-  //           client.emit('completed', {
-  //             testCaseId,
-  //             exitCode: code,
-  //             message: `Quá trình thực thi cho test case ${testCaseId} đã hoàn tất`,
-  //           });
-  //         });
-  //       } catch (error) {
-  //         // Gửi lỗi nếu một test case thất bại
-  //         client.emit('error', {
-  //           testCaseId,
-  //           error: error.message,
-  //         });
-  //       }
-  //     }
-  //   } catch (error) {
-  //     console.error(error);
-  //     client.emit('error', error.message);
-  //   }
-  // }
-  @SubscribeMessage('compile')
+@SubscribeMessage('compile')
 async handleCompile(
   @MessageBody() data: { code: string; testCases: string[][], exerciseId: string },
   @ConnectedSocket() client: Socket,
@@ -140,13 +45,13 @@ async handleCompile(
 
   try {
     // Bước 1: Lấy mã giải pháp
-    const codeSolution = await this.getSolutionCode(data.exerciseId, client);
+    const codeSolution = await this.getSolutionCode(data.exerciseId);
     
     // Bước 2: Chạy mã giải pháp và lấy kết quả mong đợi
-    const solutionResults = await this.runSolutionCode(codeSolution, uniqueId, data.testCases, client);
+    const solutionResults = await this.runSolutionCode(codeSolution, data.testCases, client);
 
     // Bước 3: Chạy mã người dùng và so sánh kết quả
-    await this.runUserCode(data.code, uniqueId, data.testCases, solutionResults, client);
+    await this.runUserCode(data.code, data.testCases, solutionResults, client);
     
     // Thông báo hoàn thành
     client.emit('completed', 'Biên dịch hoàn tất tất cả test cases');
@@ -157,21 +62,21 @@ async handleCompile(
 }
 
 // Hàm lấy mã giải pháp
-async getSolutionCode(exerciseId: string, client: Socket): Promise<string> {
+async getSolutionCode(exerciseId: string): Promise<string> {
   try {
     return await this.studyService.findSolutionCode(exerciseId);
   } catch (error) {
-    client.emit('error', `Không tìm thấy solution code: ${error.message}`);
+    // client.emit('error', `Không tìm thấy solution code: ${error.message}`);
     throw error;
   }
 }
 
 // Hàm chạy mã giải pháp và lấy kết quả stdout
-async runSolutionCode(codeSolution: string, uniqueId: string, testCases: string[][], client: Socket): Promise<string[]> {
+async runSolutionCode(codeSolution: string, testCases: string[][], client: Socket): Promise<string[]> {
   const solutionResults: string[] = [];
   for (let i = 0; i < testCases.length; i++) {
     try {
-      const process = await this.socketService.startCompilation(codeSolution, uniqueId, testCases[i]);
+      const process = await this.socketService.startCompilation(codeSolution, testCases[i]);
       const output = await this.getProcessOutput(process);
       solutionResults.push(output);
     } catch (error) {
@@ -183,10 +88,10 @@ async runSolutionCode(codeSolution: string, uniqueId: string, testCases: string[
 }
 
 // Hàm chạy mã người dùng và so sánh kết quả
-async runUserCode(userCode: string, uniqueId: string, testCases: string[][], solutionResults: string[], client: Socket): Promise<void> {
+async runUserCode(userCode: string, testCases: string[][], solutionResults: string[], client: Socket): Promise<void> {
   for (let i = 0; i < testCases.length; i++) {
     try {
-      const process = await this.socketService.startCompilation(userCode, uniqueId, testCases[i]);
+      const process = await this.socketService.startCompilation(userCode, testCases[i]);
       const userOutput = await this.getProcessOutput(process);
 
       // So sánh kết quả và emit
@@ -248,4 +153,13 @@ async getProcessOutput(process: any): Promise<string> {
     console.log('Received message from client:', message);
     this.server.emit('message', { clientId: client.id, message });
   }
+  @SubscribeMessage('compile2')
+  async compile2(
+    @MessageBody() data: { code: string; testCases: string[][], exerciseId: string },
+  ){
+    const codeSolution = await this.getSolutionCode(data.exerciseId);
+    console.log(data.testCases)
+    console.log(codeSolution)
+  }
+
 }
