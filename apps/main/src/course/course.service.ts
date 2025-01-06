@@ -6,12 +6,14 @@ import { Course } from "../schemas/course.schema";
 import { COURSE_MODEL } from "../schemas/mongoose.model";
 import { InjectModel } from "@nestjs/mongoose";
 import { Model } from "mongoose";
+import { CourseStatusService } from "../course-status/course-status.service";
 
 @Injectable()
 export class CourseService {
   constructor(
     @InjectModel("Course") private courseModel: Model<CourseDocument>,
-  ) {}
+    private readonly courseStatusService: CourseStatusService
+  ) { }
   create(createCourseDto: CreateCourseDto) {
     const createdCourse = new this.courseModel(createCourseDto);
     return createdCourse.save();
@@ -61,5 +63,11 @@ export class CourseService {
     }
 
     return "Courses already exist, skipping initialization";
+  }
+
+  async findAllByUser(userId: string) {
+    const coursesStatus = await this.courseStatusService.getUserCourseStatuses(userId);
+    const courses = await this.findAll();
+    return { courses, coursesStatus };
   }
 }

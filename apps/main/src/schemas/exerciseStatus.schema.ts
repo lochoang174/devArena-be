@@ -1,34 +1,33 @@
 import { Prop, Schema, SchemaFactory } from "@nestjs/mongoose";
-import { Document, Types } from "mongoose";
+import mongoose, { Document, Types } from "mongoose";
 import { Submission, SubmissionSchema } from "./submission.schema";
+import { User } from "./user.schema";
+import { Exercise } from "./exercise.schema";
 
 export type ExerciseStatusDocument = ExerciseStatus & Document;
 
-
-
-
 @Schema({ timestamps: true })
 export class ExerciseStatus {
-  @Prop({ type: Types.ObjectId, ref: "ExerciseModel", required: true })
-  exerciseId: Types.ObjectId;
+  @Prop({ type: mongoose.Schema.Types.ObjectId, ref: "UserModel", required: true })
+  userId: User;
 
+  @Prop({ type: mongoose.Schema.Types.ObjectId, ref: "ExerciseModel", required: true })
+  exerciseId: Exercise;
 
   @Prop({
     type: String,
-    enum: ["NOT_STARTED", "IN_PROGRESS", "COMPLETED"],
-    default: "NOT_STARTED",
+    enum: ["in-progress", "completed"],
+    default: "in-progress"
   })
   status: string;
 
-
-  @Prop({ type: Number, min: 0, max: 100 })
-  score?: number;
-
   @Prop({ type: [SubmissionSchema], default: [] })
-  submission: Submission[]; // Array of submissions
+  submission: Submission[];
 
-  
 }
 
 export const ExerciseStatusSchema =
   SchemaFactory.createForClass(ExerciseStatus);
+
+
+ExerciseStatusSchema.index({ userId: 1, exerciseId: 1 }, { unique: true });

@@ -14,13 +14,13 @@ export class ExerciseService {
   constructor(
     @InjectModel("Exercise") private exerciseModel: Model<ExerciseDocument>,
     private readonly courseService: CourseService,
-    
-  ) {}
+
+  ) { }
 
   async findAllByCourseId(courseId: string) {
     return this.exerciseModel.find({ courseId });
   }
- 
+
   async create(createExerciseDto: CreateExerciseDto): Promise<Exercise> {
     const newExercise = new this.exerciseModel({});
     return newExercise.save();
@@ -29,7 +29,7 @@ export class ExerciseService {
   // /**
   //  * Find all exercises
   //  */
- 
+
   async findAll() {
     return "Success";
   }

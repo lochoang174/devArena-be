@@ -8,6 +8,7 @@ import { ExerciseStatusModule } from '../exercise-status/exercise-status.module'
 @Module({
   controllers: [CourseStatusController],
   providers: [CourseStatusService],
-  imports: [CourseModule, UserModule, ExerciseStatusModule] 
+  // imports: [CourseModule, UserModule, ExerciseStatusModule],
+  exports: [CourseStatusService],
 })
-export class CourseStatusModule {}
+export class CourseStatusModule { }

@@ -9,4 +9,4 @@ import { ExerciseModule } from '../exercise/exercise.module';
   imports: [ExerciseModule],
   exports: [ExerciseStatusService],
 })
-export class ExerciseStatusModule {}
+export class ExerciseStatusModule { }

@@ -13,15 +13,15 @@ import { UpdateCourseStatusDto } from "./dto/update-course-status.dto";
 
 @Controller("course-status")
 export class CourseStatusController {
-  constructor(private readonly courseStatusService: CourseStatusService) {}
+  constructor(private readonly courseStatusService: CourseStatusService) { }
 
-  @Post("enroll")
-  async enrollCourse(@Body() body: CreateCourseStatusDto) {
-    return await this.courseStatusService.checkAndCreateCourseStatus(
-      body.userId,
-      body.courseId,
-    );
-  }
+  // @Post("enroll")
+  // async enrollCourse(@Body() body: CreateCourseStatusDto) {
+  //   return await this.courseStatusService.checkAndCreateCourseStatus(
+  //     body.userId,
+  //     body.courseId,
+  //   );
+  // }
 
   @Get("user/:userId")
   async getUserCourseStatuses(@Param("userId") userId: string) {

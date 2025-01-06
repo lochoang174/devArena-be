@@ -6,12 +6,14 @@ import { MongooseModule } from "@nestjs/mongoose";
 import { Study, StudySchema } from "../schemas/study.schema";
 import { ExerciseModule } from "../exercise/exercise.module";
 import { MongooseModelsModule } from "../schemas/mongoose.model";
+import { ExerciseStatusModule } from "../exercise-status/exercise-status.module";
 
 @Module({
+  imports: [ExerciseStatusModule],
   controllers: [StudyController],
   providers: [StudyService],
   exports: [StudyService],
   // imports: [MongooseModelsModule],
 })
-export class StudyModule {}
+export class StudyModule { }
 

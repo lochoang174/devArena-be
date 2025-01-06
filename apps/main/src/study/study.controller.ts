@@ -4,6 +4,8 @@ import {
   Delete,
 
   Get,
+  HttpStatus,
+  HttpException,
   Param,
   Post,
   Put,
@@ -12,7 +14,7 @@ import {
 import { StudyService } from "./study.service";
 import { CreateStudyDto } from "./dto/createStudy.dto";
 import { RolesGuard } from "../auth/guards/role.guard";
-import { Roles } from "@app/common";
+import { Public, Roles } from "@app/common";
 import { combineLatest } from "rxjs";
 
 
@@ -51,9 +53,8 @@ export class StudyController {
     return await this.studyService.findAll();
   }
 
+  @Public()
   @Get(":id")
-  @UseGuards(RolesGuard)
-  @Roles(["admin"])
   async findById(@Param("id") id: string) {
     return await this.studyService.findById(id);
   }
@@ -71,4 +72,19 @@ export class StudyController {
   async findExercisesByCourse(@Param("courseId") courseId: string) {
     return await this.studyService.findExercisesByCourse(courseId);
   }
+
+  @Get("course/:courseId/user/:userId")
+  @Roles(["admin", "client"])
+  async findAllByUserAndCourse(
+    @Param("courseId") courseId: string,
+    @Param("userId") userId: string
+  ) {
+    try {
+      return await this.studyService.findAllByUserAndCourse(userId, courseId);
+    } catch (error) {
+      throw new HttpException(error.message, HttpStatus.NOT_FOUND); // Or use BAD_REQUEST based on the error type
+    }
+  }
+
+
 }

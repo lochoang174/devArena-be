@@ -15,65 +15,62 @@ export class CourseStatusService {
   constructor(
     @InjectModel("CourseStatus")
     private courseStatusModel: Model<CourseStatusDocument>,
-    private readonly courseService: CourseService,
-    private readonly userService: UserService,
-    private readonly exerciseStatusService: ExerciseStatusService,
-    private readonly exerciseService: ExerciseService,
-  ) {}
 
-  async checkAndCreateCourseStatus(userId: string, courseId: string) {
-    try {
-      // Kiểm tra xem courseStatus đã tồn tại chưa
-      const existingStatus = await this.courseStatusModel.findOne({
-        userId,
-        courseId,
-      });
+    // private readonly exerciseService: ExerciseService,
+  ) { }
 
-      if (existingStatus) {
-        return existingStatus;
-      }
+  // async checkAndCreateCourseStatus(userId: string, courseId: string) {
+  //   try {
+  //     // Kiểm tra xem courseStatus đã tồn tại chưa
+  //     const existingStatus = await this.courseStatusModel.findOne({
+  //       userId,
+  //       courseId,
+  //     });
 
-      // Lấy danh sách exercises của course
-      const exercises = await this.exerciseService.findAllByCourseId(courseId);
+  //     if (existingStatus) {
+  //       return existingStatus;
+  //     }
 
-      // Tạo mảng exercise statuses
-      const exerciseStatuses = exercises.map((exercise) => ({
-        exerciseId: exercise._id,
-        progress: 0,
-      }));
+  //     // Lấy danh sách exercises của course
+  //     const exercises = await this.exerciseService.findAllByCourseId(courseId);
 
-      // Tạo mới courseStatus với mảng exercise statuses
-      const newCourseStatus = new this.courseStatusModel({
-        userId,
-        courseId,
-        progress: 0,
-        status: "in-progress",
-        enrolledAt: new Date(),
-        completedAt: null,
-        exerciseStatuses, // Thêm mảng exercise statuses vào đây
-      });
+  //     // Tạo mảng exercise statuses
+  //     const exerciseStatuses = exercises.map((exercise) => ({
+  //       exerciseId: exercise._id,
+  //       progress: 0,
+  //     }));
 
-      return await newCourseStatus.save();
-    } catch (error) {
-      throw new Error(`Failed to check/create course status: ${error.message}`);
-    }
-  }
+  //     // Tạo mới courseStatus với mảng exercise statuses
+  //     const newCourseStatus = new this.courseStatusModel({
+  //       userId,
+  //       courseId,
+  //       progress: 0,
+  //       status: "in-progress",
+  //       enrolledAt: new Date(),
+  //       completedAt: null,
+  //       exerciseStatuses,
+  //     });
+
+  //     return await newCourseStatus.save();
+  //   } catch (error) {
+  //     throw new Error(`Failed to check/create course status: ${error.message}`);
+  //   }
+  // }
 
   async getUserCourseStatuses(userId: string) {
     try {
-      console.log("userId", userId);
       const courseStatuses = await this.courseStatusModel
-        .find({ userId }, { exerciseStatuses: 0 , userId: 0, completedAt:0
-          
+        .find({ userId }, {
+          exerciseStatuses: 0, userId: 0, completedAt: 0
+
         })
-        .populate("courseId") // Nếu bạn muốn lấy thêm thông tin của course
-        .exec(); 
+        .exec();
 
       return courseStatuses;
     } catch (error) {
       throw new Error(`Failed to get user course statuses: ${error.message}`);
     }
-  } 
+  }
   async getCourseStatusById(courseStatusId: string) {
     return await this.courseStatusModel
       .findById(courseStatusId)

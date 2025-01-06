@@ -4,7 +4,7 @@ import { Course } from "./course.schema";
 import { User } from "./user.schema";
 import { ExerciseStatus } from "./exerciseStatus.schema";
 
-export type CourseStatusDocument = HydratedDocument<CourseStatus>;
+export type CourseStatusDocument = ExerciseStatus & Document;
 
 @Schema({
   timestamps: true,
@@ -30,11 +30,11 @@ export class CourseStatus {
 
   @Prop({ type: Date })
   completedAt: Date;
-   @Prop([{
-    exerciseId: { type: mongoose.Schema.Types.ObjectId, ref: 'ExerciseModel', required: true },
+  //  @Prop([{
+  //   exerciseId: { type: mongoose.Schema.Types.ObjectId, ref: 'ExerciseModel', required: true },
 
-  }])
-  exerciseStatuses: ExerciseStatus[];
+  // }])
+  // exerciseStatuses: ExerciseStatus[];
 }
 
 export const CourseStatusSchema = SchemaFactory.createForClass(CourseStatus);

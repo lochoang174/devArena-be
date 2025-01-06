@@ -7,7 +7,7 @@ import { ResponseMessage, Roles } from '@app/common';
 
 @Controller('course')
 export class CourseController {
-  constructor(private readonly courseService: CourseService) {}
+  constructor(private readonly courseService: CourseService) { }
 
   @Post()
   create(@Body() createCourseDto: CreateCourseDto) {
@@ -16,7 +16,7 @@ export class CourseController {
 
   @Get()
   @UseGuards(RolesGuard)
-  @Roles(['admin','client'])
+  @Roles(['admin', 'client'])
   @ResponseMessage('Get all course')
   findAll() {
     return this.courseService.findAll();
@@ -36,4 +36,13 @@ export class CourseController {
   remove(@Param('id') id: string) {
     return this.courseService.remove(+id);
   }
+
+  @Get("user/:userId")
+  @Roles(["admin, client"])
+  async getExerciseStatus(@Param("userId") userId: string) {
+    return await this.courseService.findAllByUser(userId);
+  }
+
+
+
 }

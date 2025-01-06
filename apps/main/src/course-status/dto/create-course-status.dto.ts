@@ -9,5 +9,9 @@ export class CreateCourseStatusDto {
 
   @IsNotEmpty()
   @IsString()
-  courseId: string; 
+  courseId: string;
+
+  @IsNotEmpty()
+  @IsString()
+  status: string;
 }
