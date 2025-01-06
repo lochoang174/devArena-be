@@ -24,9 +24,8 @@ export class UserController implements OnModuleInit{
     ];
   
     try {
-      const response = await this.compileService.testCompile({ code: "abc", testcases: tc })
-      console.log('Response:', response);
-      return response;
+      // const response = await this.compileService.testCompile({ code: "abc", testcases: tc })
+      return "response";
     } catch (error) { 
       console.error('Error:', error);
       throw error; // Hoặc trả lỗi tuỳ ý

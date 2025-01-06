@@ -1,19 +1,24 @@
 import { Controller, Get } from '@nestjs/common';
 import { CompileService } from './compile.service';
-import { CompileServiceControllerMethods, CompileServiceController, Compile } from '@app/common';
+import { CompileServiceControllerMethods, CompileServiceController, CompileRequest, CompileStatus } from '@app/common';
+import { Observable } from 'rxjs';
 
 @Controller()
 @CompileServiceControllerMethods()
 export class CompileController implements CompileServiceController {
   constructor(private readonly compileService: CompileService) {}
-  testCompile(request: Compile): void {
-    console.log(request)
+  runCompile(request: CompileRequest): Observable<CompileStatus> {
+    try {
+    return this.compileService.compile(request)
+      
+    } catch (error) {
+      throw new Error('Method not implemented.');
+      
+    }
   }
 
 
-  @Get()
-  getHello(): string {
-    return this.compileService.getHello();
-  }
+
+
   
 }

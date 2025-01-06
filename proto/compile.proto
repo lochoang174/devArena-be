@@ -2,20 +2,25 @@ syntax = "proto3";
 package compile;
 
 // Import nếu muốn trả về Empty
-import "google/protobuf/empty.proto";
 
 service CompileService {
   // Hàm xử lý compile code với danh sách testcase
-  rpc TestCompile (Compile) returns (google.protobuf.Empty);
+  rpc runCompile (CompileRequest) returns (stream CompileStatus);
 }
 
-message Compile {
-  string code = 1; // Mã nguồn để kiểm tra
-  string codeSolution=2;
+message CompileRequest {
+  string code = 1;              // Mã nguồn để kiểm tra
+  string codeSolution = 2;      // Mã nguồn giải pháp
   repeated TestCase testcases = 3; // Danh sách các testcase
-  
 }
 
 message TestCase {
-  repeated string inputs = 1; // Mảng các input của testcase
+  repeated string inputs = 1;   // Mảng các input của testcase
+}
+
+message CompileStatus {
+  int32 testCaseIndex = 1;     
+  bool isCorrect = 2;           
+  string output = 3;            
+  string outputExpect = 4;      
 }

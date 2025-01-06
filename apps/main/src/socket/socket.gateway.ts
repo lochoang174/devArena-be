@@ -5,6 +5,9 @@ import { UpdateSocketDto } from './dto/update-socket.dto';
 import { Server, Socket } from 'socket.io';
 import { ExerciseService } from '../exercise/exercise.service';
 import { StudyService } from '../study/study.service';
+import { COMPILE_SERVICE_NAME, CompileServiceClient } from '@app/common';
+import { Inject, OnModuleInit } from '@nestjs/common';
+import { ClientGrpc } from '@nestjs/microservices';
 
 @WebSocketGateway({
   cors: {
@@ -15,15 +18,21 @@ import { StudyService } from '../study/study.service';
 
   
 })
-export class SocketGateway implements OnGatewayConnection {
+export class SocketGateway implements OnGatewayConnection,OnModuleInit  {
   @WebSocketServer() server: Server;
+  private compileService:CompileServiceClient
 
   constructor(
     private readonly socketService: SocketService,
-    private studyService:StudyService
+    private studyService:StudyService,
+    @Inject(COMPILE_SERVICE_NAME) private client: ClientGrpc
+    
   
   ) {}
-
+  onModuleInit() {
+    this.compileService =
+      this.client.getService<CompileServiceClient>(COMPILE_SERVICE_NAME);
+  }
   // This method is called when a new user connects
   handleConnection(client: Socket) {
     console.log('A new user connected:', client.id);
@@ -156,10 +165,30 @@ async getProcessOutput(process: any): Promise<string> {
   @SubscribeMessage('compile2')
   async compile2(
     @MessageBody() data: { code: string; testCases: string[][], exerciseId: string },
+    @ConnectedSocket() client: Socket,
+
   ){
-    const codeSolution = await this.getSolutionCode(data.exerciseId);
-    console.log(data.testCases)
-    console.log(codeSolution)
+    const compileRequest = {
+      code: data.code,
+      codeSolution: await this.getSolutionCode(data.exerciseId),
+      testcases: data.testCases.map((inputs) => ({ inputs })),
+    };
+  
+    const stream = this.compileService.runCompile(compileRequest);
+  
+    stream.subscribe({
+      next: (status) => {
+        client.emit('output', status); // Truyền kết quả về client qua socket
+      },
+      error: (err) => {
+        console.log(err)
+        client.emit('error', { message: err.message });
+      },
+      complete: () => {
+        client.emit('completed', 'Biên dịch hoàn tất tất cả test cases');
+      },
+    });
+    
   }
 
 }

@@ -7,13 +7,14 @@
 /* eslint-disable */
 import { GrpcMethod, GrpcStreamMethod } from "@nestjs/microservices";
 import { Observable } from "rxjs";
-import { Empty } from "../../../../google/protobuf/empty";
 
 export const protobufPackage = "compile";
 
-export interface Compile {
+export interface CompileRequest {
   /** Mã nguồn để kiểm tra */
   code: string;
+  /** Mã nguồn giải pháp */
+  codeSolution: string;
   /** Danh sách các testcase */
   testcases: TestCase[];
 }
@@ -23,23 +24,30 @@ export interface TestCase {
   inputs: string[];
 }
 
+export interface CompileStatus {
+  testCaseIndex: number;
+  isCorrect: boolean;
+  output: string;
+  outputExpect: string;
+}
+
 export const COMPILE_PACKAGE_NAME = "compile";
 
 export interface CompileServiceClient {
   /** Hàm xử lý compile code với danh sách testcase */
 
-  testCompile(request: Compile): Observable<Empty>;
+  runCompile(request: CompileRequest): Observable<CompileStatus>;
 }
 
 export interface CompileServiceController {
   /** Hàm xử lý compile code với danh sách testcase */
 
-  testCompile(request: Compile): void;
+  runCompile(request: CompileRequest): Observable<CompileStatus>;
 }
 
 export function CompileServiceControllerMethods() {
   return function (constructor: Function) {
-    const grpcMethods: string[] = ["testCompile"];
+    const grpcMethods: string[] = ["runCompile"];
     for (const method of grpcMethods) {
       const descriptor: any = Reflect.getOwnPropertyDescriptor(constructor.prototype, method);
       GrpcMethod("CompileService", method)(constructor.prototype[method], method, descriptor);
