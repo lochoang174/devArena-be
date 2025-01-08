@@ -22,10 +22,10 @@ export class ExerciseStatusController {
     }
   }
 
-  @Put(":id")
-  async update(@Param("id") id: string, @Body() updateExerciseStatusDto: Partial<CreateExerciseStatusDto>) {
+  @Put("user/:userId/exercise/:exerciseId")
+  async update(@Param("userId") userId: string, @Param("exerciseId") exerciseId: string) {
     try {
-      return await this.exerciseStatusService.update(id, updateExerciseStatusDto);
+      return await this.exerciseStatusService.update(userId, exerciseId);
     }
     catch (err) {
       throw new HttpException(
@@ -33,6 +33,11 @@ export class ExerciseStatusController {
         HttpStatus.CONFLICT,
       );
     }
+  }
+
+  @Get("user/:userId/exercise/:exerciseId")
+  async getExerciseStatusByUserAndExercise(@Param("userId") userId: string, @Param("exerciseId") exerciseId: string) {
+    return await this.exerciseStatusService.findOneByUSerAndExercise(userId, exerciseId);
   }
 
   @Get("course/:courseId/user/:userId")
