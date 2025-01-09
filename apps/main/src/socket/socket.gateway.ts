@@ -18,11 +18,11 @@ import { ExerciseStatusService } from '../exercise-status/exercise-status.servic
   path: '/socket.io/',
   transports: ['websocket', 'polling'],
 
-  
+
 })
-export class SocketGateway implements OnGatewayConnection,OnModuleInit  {
+export class SocketGateway implements OnGatewayConnection, OnModuleInit {
   @WebSocketServer() server: Server;
-  private compileService:CompileServiceClient
+  private compileService: CompileServiceClient
 
   constructor(
     private readonly socketService: SocketService,
@@ -30,9 +30,9 @@ export class SocketGateway implements OnGatewayConnection,OnModuleInit  {
     private exerciseService: ExerciseService,
     private exerciseStatusService: ExerciseStatusService,
     @Inject(COMPILE_SERVICE_NAME) private client: ClientGrpc
-    
-  
-  ) {}
+
+
+  ) { }
   onModuleInit() {
     this.compileService =
       this.client.getService<CompileServiceClient>(COMPILE_SERVICE_NAME);
@@ -79,20 +79,20 @@ async getSolutionCode(exerciseId: string): Promise<string> {
     console.log('Received message from client:', message);
     this.server.emit('message', { clientId: client.id, message });
   }
-  @SubscribeMessage('compile2')
+  @SubscribeMessage('compile')
   async compile2(
     @MessageBody() data: { code: string; testCases: string[][], exerciseId: string },
     @ConnectedSocket() client: Socket,
 
-  ){
+  ) {
     const compileRequest = {
       code: data.code,
       codeSolution: await this.getSolutionCode(data.exerciseId),
       testcases: data.testCases.map((inputs) => ({ inputs })),
     };
-  
+
     const stream = this.compileService.runCompile(compileRequest);
-  
+
     stream.subscribe({
       next: (status) => {
         client.emit('output', status); // Truyền kết quả về client qua socket

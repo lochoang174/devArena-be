@@ -7,7 +7,7 @@ import { JwtAuthGuard, ResponseMessage, Roles } from '@app/common';
 
 @Controller('exercise')
 export class ExerciseController {
-  constructor(private readonly exerciseService: ExerciseService) {}
+  constructor(private readonly exerciseService: ExerciseService) { }
 
   // @Post()
   // create(@Body() createExerciseDto: CreateExerciseDto) {
@@ -16,7 +16,7 @@ export class ExerciseController {
 
   @Get()
   @UseGuards(RolesGuard)
-  @Roles(['admin','client'])
+  @Roles(['admin', 'client'])
   @ResponseMessage("Get exercise successfully!")
   findAll() {
     return this.exerciseService.findAll();
