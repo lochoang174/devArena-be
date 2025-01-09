@@ -1,5 +1,6 @@
 import {
   BadRequestException,
+  ForbiddenException,
   Injectable,
   UnauthorizedException,
 } from "@nestjs/common";
@@ -131,7 +132,7 @@ export class AuthService {
       {
         secret: this.configService.get<string>("JWT_ACCESS_TOKEN_SECRET"),
 
-        expiresIn: "6000s",
+        expiresIn: this.configService.get<string>("JWT_ACCESS_TOKEN_EXPIRED"), // Cập nhật thời gian hết hạn theo yêu cầu
       },
     );
 
@@ -145,7 +146,7 @@ export class AuthService {
       {
         secret: this.configService.get<string>("JWT_REFRESH_TOKEN_SECRET"),
 
-        expiresIn: "36000s",
+        expiresIn: this.configService.get<string>("JWT_REFRESH_TOKEN_EXPIRED"), // Cập nhật thời gian hết hạn theo yêu cầu
       },
     );
     await this.usersService.updateToken(refresh_token, user.id);
@@ -219,4 +220,68 @@ export class AuthService {
       throw error;
     }
   }
+  
+
+  async refreshToken( old_refreshToken: string) {
+    try {
+
+      // 1. Kiểm tra tính hợp lệ của refresh token cũ và xác minh thời gian hết hạn
+      const payload: IUser = this.jwtService.verify(old_refreshToken, {
+        secret: this.configService.get<string>("JWT_REFRESH_TOKEN_SECRET"),
+      });
+      if (!payload) {
+        throw new UnauthorizedException("Invalid refresh token");
+      }
+  
+      // 2. Kiểm tra xem refresh token có khớp với refresh token của người dùng trong cơ sở dữ liệu
+      const currentRefreshToken = await this.usersService.findOne(payload.id).select("refreshToken");
+      
+      if (currentRefreshToken.refreshToken !== old_refreshToken) {
+        throw new UnauthorizedException("Invalid refresh token");
+      }
+  
+      // 3. Tạo refresh token mới
+      const newRefreshToken = this.jwtService.sign(
+        {
+          id: payload.id,
+          role: payload.role,
+          username: payload.username,
+          email: payload.email,
+        },
+        {
+          secret: this.configService.get<string>("JWT_REFRESH_TOKEN_SECRET"),
+          expiresIn: this.configService.get<string>("JWT_REFRESH_TOKEN_EXPIRED"), // Cập nhật thời gian hết hạn theo yêu cầu
+        }
+      );
+  
+      // 4. Cập nhật refresh token mới vào cơ sở dữ liệu
+      await this.usersService.updateToken(newRefreshToken, payload.id);
+  
+      // 5. Tạo access token mới
+      const newAccessToken = this.jwtService.sign(
+        {
+          id: payload.id,
+          role: payload.role,
+          username: payload.username,
+          email: payload.email,
+        },
+        {
+          secret: this.configService.get<string>("JWT_ACCESS_TOKEN_SECRET"),
+          expiresIn: this.configService.get<string>("JWT_ACCESS_TOKEN_EXPIRED"), // Cập nhật thời gian hết hạn theo yêu cầu
+        }
+      );
+  
+      return {
+        access_token: newAccessToken,
+        refresh_token: newRefreshToken,
+      };
+    } catch (error) {
+      if ( error.name === 'TokenExpiredError') {
+        throw new ForbiddenException("Refresh token expired");
+      }
+      console.log(error)
+      throw new CustomException("Could not refresh token", 400);
+    }
+  }
+  
 }

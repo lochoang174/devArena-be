@@ -1,11 +1,10 @@
 syntax = "proto3";
 package compile;
 
-// Import nếu muốn trả về Empty
-
 service CompileService {
   // Hàm xử lý compile code với danh sách testcase
   rpc runCompile (CompileRequest) returns (stream CompileStatus);
+  rpc runSubmit (CompileRequest) returns (stream CompileResult);
 }
 
 message CompileRequest {
@@ -16,6 +15,7 @@ message CompileRequest {
 
 message TestCase {
   repeated string inputs = 1;   // Mảng các input của testcase
+  optional string output = 2;   // Dữ liệu đầu ra mong đợi
 }
 
 message CompileStatus {
@@ -23,4 +23,19 @@ message CompileStatus {
   bool isCorrect = 2;           
   string output = 3;            
   string outputExpect = 4;      
+}
+
+// Use `oneof` to allow multiple possible message types in the stream.
+message CompileResult {
+  oneof result {
+    CompileStatus status = 1; // Emit a CompileStatus for each test case
+    FinalResult finalResult = 2; // Emit a FinalResult once all test cases are done
+  }
+}
+
+// The final result contains status, score, and result summary
+message FinalResult {
+  int32 status = 1;   // HTTP-like status code (200, 400, etc.)
+  double score = 2;   // Score of the submission
+  string result = 3;  // Summary of results (e.g., "5/5")
 }

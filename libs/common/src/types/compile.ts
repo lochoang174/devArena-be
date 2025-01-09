@@ -22,6 +22,8 @@ export interface CompileRequest {
 export interface TestCase {
   /** Mảng các input của testcase */
   inputs: string[];
+  /** Dữ liệu đầu ra mong đợi */
+  output?: string | undefined;
 }
 
 export interface CompileStatus {
@@ -31,23 +33,47 @@ export interface CompileStatus {
   outputExpect: string;
 }
 
+/** Use `oneof` to allow multiple possible message types in the stream. */
+export interface CompileResult {
+  /** Emit a CompileStatus for each test case */
+  status?:
+    | CompileStatus
+    | undefined;
+  /** Emit a FinalResult once all test cases are done */
+  finalResult?: FinalResult | undefined;
+}
+
+/** The final result contains status, score, and result summary */
+export interface FinalResult {
+  /** HTTP-like status code (200, 400, etc.) */
+  status: number;
+  /** Score of the submission */
+  score: number;
+  /** Summary of results (e.g., "5/5") */
+  result: string;
+}
+
 export const COMPILE_PACKAGE_NAME = "compile";
 
 export interface CompileServiceClient {
   /** Hàm xử lý compile code với danh sách testcase */
 
   runCompile(request: CompileRequest): Observable<CompileStatus>;
+
+  runSubmit(request: CompileRequest): Observable<CompileResult>;
 }
 
 export interface CompileServiceController {
   /** Hàm xử lý compile code với danh sách testcase */
 
   runCompile(request: CompileRequest): Observable<CompileStatus>;
+
+  runSubmit(request: CompileRequest): Observable<CompileResult>;
 }
 
 export function CompileServiceControllerMethods() {
   return function (constructor: Function) {
-    const grpcMethods: string[] = ["runCompile"];
+    const grpcMethods: string[] = ["runCompile", "runSubmit"];
     for (const method of grpcMethods) {
       const descriptor: any = Reflect.getOwnPropertyDescriptor(constructor.prototype, method);
       GrpcMethod("CompileService", method)(constructor.prototype[method], method, descriptor);

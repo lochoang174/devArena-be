@@ -1,4 +1,4 @@
-import { CompileRequest, CompileStatus, TestCase } from '@app/common';
+import { CompileRequest, CompileResult, CompileStatus, TestCase } from '@app/common';
 import { Injectable } from '@nestjs/common';
 import { Observable } from 'rxjs';
 import { Readable } from 'stream';
@@ -138,4 +138,65 @@ export class CompileService {
     }
     return solutionResults;
   }
+  submit(data: CompileRequest): Observable<CompileResult> {
+    return new Observable<CompileResult>((observer) => {
+      (async () => {
+        try {
+          let correctCount = 0;  // To track the number of correct test cases
+  
+          // 1. Chạy solution code để lấy đáp án
+          // const expectedOutputs = await this.runSolutionCode(data.codeSolution, data.testcases);
+          
+          // 2. Chạy code của người dùng và so sánh với đáp án
+          for (let i = 0; i < data.testcases.length; i++) {
+            try {
+              const process = await this.startCompilation(data.code, data.testcases[i].inputs);
+              const userOutput = await this.getProcessOutput(process);
+  
+              const isCorrect = userOutput.trim() === data.testcases[i].output.trim();
+  
+              const status: CompileStatus = {
+                testCaseIndex: i,
+                isCorrect,
+                output: userOutput.trim(),
+                outputExpect: data.testcases[i].output.trim(),
+              };
+              // Push the result of this test case
+              observer.next({
+                status
+              });
+  
+              // If the test case is correct, increment the correct count
+              if (isCorrect) {
+                correctCount++;
+              }
+            } catch (error) {
+              observer.error({ testCaseId: i + 1, error: error.message });
+              return;
+            }
+          }
+  
+          // Calculate the score based on the number of correct test cases
+          const totalTestCases = data.testcases.length;
+          const score = (correctCount / totalTestCases) * 100;  // Score as a percentage
+          const result = `${correctCount}/${totalTestCases}`;  // Format the result string
+  
+          // Return the final result and score
+          observer.next({
+           finalResult:{
+            result,
+            score,
+            status:score===100 ? 200 : 400
+           }
+          });
+  
+          observer.complete();
+        } catch (error) {
+          observer.error({ message: error.message });
+        }
+      })();
+    });
+  }
+  
+  
 }

@@ -43,10 +43,10 @@ export class JwtAuthGuard extends AuthGuard("jwt") {
     ]);
     if (isPublic) {
       return true;
-    }
+    } 
 
     const request = this.getRequest(context);
-
+    console.log(request?.headers?.authorization)
     if (!request?.headers?.authorization) {
       throw new UnauthorizedException("Missing authorization token");
     }
@@ -56,8 +56,14 @@ export class JwtAuthGuard extends AuthGuard("jwt") {
   handleRequest(err, user, info, context: ExecutionContext) {
     // You can throw an exception based on either "info" or "err" arguments
     // const request: Request = context.switchToHttp().getRequest();
+    console.log(info)
+
+    if(info&&info.message==="jwt expired"){
+      console.log("error")
+      throw new UnauthorizedException("Jwt expired")
+    }
     if (err || !user) {
-      throw err || new UnauthorizedException("Token invalid");
+      throw new UnauthorizedException("Token invalid");
     }
     //   const targetMethod = request.method;
     //   const targetEndpoint = request.route?.path;

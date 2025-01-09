@@ -9,6 +9,7 @@ import { VerifyDTO } from './dto/verifyOtp.dto';
 import { Public, ResponseMessage } from '@app/common/decorators/customize';
 import { IUser } from '@app/common/types';
 import { MessagePattern, Payload } from '@nestjs/microservices';
+import { refreshDto } from './dto/refresh.dto';
 
 @Controller('auth')
 export class AuthController {
@@ -55,7 +56,11 @@ export class AuthController {
   async logout() {
     return this.authService.logout();
   }
-
+  @Public()
+  @Post("refresh")
+  async refresh( @Body() payload:refreshDto){
+    return this.authService.refreshToken(payload.refreshToken)
+  }
 
   @MessagePattern('authenticate')
   async authenticate(@Payload() data: any) {

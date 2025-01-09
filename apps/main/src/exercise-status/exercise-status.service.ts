@@ -12,14 +12,25 @@ export class ExerciseStatusService {
     @InjectModel("ExerciseStatus")
     private exerciseStatusModel: Model<ExerciseStatusDocument>,
     private readonly exerciseService: ExerciseService,
-  ) { }
-  async create(createExerciseStatusDto: CreateExerciseStatusDto): Promise<ExerciseStatusDocument> {
-    const newExerciseStatus = new this.exerciseStatusModel(createExerciseStatusDto);
+  ) {}
+  async create(
+    createExerciseStatusDto: CreateExerciseStatusDto,
+  ): Promise<ExerciseStatusDocument> {
+    const newExerciseStatus = new this.exerciseStatusModel(
+      createExerciseStatusDto,
+    );
     return newExerciseStatus.save();
   }
 
-  async update(id: string, updateExerciseStatusDto: Partial<CreateExerciseStatusDto>): Promise<ExerciseStatusDocument> {
-    return this.exerciseStatusModel.findByIdAndUpdate(new Types.ObjectId(id), updateExerciseStatusDto, { new: true }).exec();
+  async update(
+    id: string,
+    updateExerciseStatusDto: Partial<CreateExerciseStatusDto>,
+  ): Promise<ExerciseStatusDocument> {
+    return this.exerciseStatusModel
+      .findByIdAndUpdate(new Types.ObjectId(id), updateExerciseStatusDto, {
+        new: true,
+      })
+      .exec();
   }
   // async initExerciseStatus(userId: string, courseId: string) {
   //   const exercises = await this.exerciseService.findAllByCourseId(courseId);
@@ -39,6 +50,58 @@ export class ExerciseStatusService {
     const exerciseIds = exercises.map((exercise) => exercise._id);
 
     return await this.exerciseStatusModel
-      .find({ userId, exerciseId: { $in: exerciseIds } }).select("_id exerciseId status").exec();
+      .find({ userId, exerciseId: { $in: exerciseIds } })
+      .select("_id exerciseId status")
+      .exec();
+  }
+
+  async updateStatusAndSubmission(
+    userId: string,
+    exerciseId: string,
+    exerciseStatus: string,
+    code: string,
+    result: string,
+    score: number,
+    submissionStatus: string
+  ) {
+    const exerciseObjectId = new Types.ObjectId(exerciseId);
+  
+    // Tìm tài liệu
+    let exercise = await this.exerciseStatusModel.findOne({
+      userId,
+      exerciseId: exerciseObjectId,
+    });
+  
+    // Nếu không tồn tại, tạo mới
+    if (!exercise) {
+      exercise = await this.exerciseStatusModel.create({
+        userId,
+        exerciseId: exerciseObjectId,
+        status: exerciseStatus,
+        submission: [], // Khởi tạo mảng submission
+      });
+    } else {
+      // Nếu đã tồn tại, cập nhật status
+      exercise.status = exerciseStatus;
+    }
+  
+    // Thêm submission mới vào mảng submission
+    exercise.submission.push({
+      code,
+      isPublic: false,
+      result,
+      score,
+      status: submissionStatus,
+    });
+  
+    // Lưu tài liệu sau khi thay đổi
+    await exercise.save();
+  }
+  async getSubmission(userId:string, exerciseId:string){
+    const exerciseStatus = await this.exerciseStatusModel.findOne({
+      userId,
+      exerciseId
+    }).select("submission")
+    return exerciseStatus
   }
 }

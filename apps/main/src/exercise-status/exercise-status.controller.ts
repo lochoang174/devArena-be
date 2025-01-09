@@ -1,12 +1,16 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete, HttpException, HttpStatus, Put } from '@nestjs/common';
+import { Controller, Get, Post, Body, Patch, Param, Delete, HttpException, HttpStatus, Put, Query } from '@nestjs/common';
 import { ExerciseStatusService } from './exercise-status.service';
 import { CreateExerciseStatusDto } from './dto/create-exercise-status.dto';
 import { UpdateExerciseStatusDto } from './dto/update-exercise-status.dto';
+import { CurrentUser, IUser } from '@app/common';
 
 @Controller('exercise-status')
 export class ExerciseStatusController {
   constructor(private readonly exerciseStatusService: ExerciseStatusService) { }
-
+ @Get("/submission/:id")
+ async getSubmission(@Param("id") id: string,@CurrentUser() user: IUser){
+  return await this.exerciseStatusService.getSubmission(user.id,id)
+ }
 
   @Post()
   async create(@Body() createExerciseStatusDto: CreateExerciseStatusDto) {

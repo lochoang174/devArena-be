@@ -1,6 +1,5 @@
 import { Prop, Schema, SchemaFactory } from "@nestjs/mongoose";
 import { Document, Types } from "mongoose";
-import { ObjectType, Field, ID, registerEnumType } from "@nestjs/graphql";
 import { Testcase, TestcaseSchema } from "./testcase.schema";
 
 // Register enums with GraphQL
@@ -16,10 +15,6 @@ export enum DifficultyEnum {
   Hard = "hard",
 }
 
-registerEnumType(DifficultyEnum, {
-  name: "DifficultyEnum",
-  description: "The difficulty levels for exercises",
-});
 
 export const PredefinedTags = [
   "array",
@@ -86,29 +81,23 @@ export const PredefinedTags = [
   "bucket-sort",
 ];
 
-@ObjectType() // GraphQL ObjectType for Exercise
 @Schema({
   timestamps: true, // Adds createdAt and updatedAt fields
   discriminatorKey: "type",
 })
 export class Exercise {
-  @Field(() => ID) // ID type for GraphQL
   @Prop({ required: true })
   _id: Types.ObjectId;
 
-  @Field() // String type for GraphQL
   @Prop({ required: true })
   title: string;
 
-  @Field(() => DifficultyEnum) // Enum type for GraphQL
   @Prop({ enum: DifficultyEnum, required: true })
   difficulty: DifficultyEnum;
 
-  @Field() // String type for GraphQL
   @Prop({ required: true })
   content: string;
 
-  @Field(() => [String]) // Array of strings for GraphQL
   @Prop({
     type: [String],
     validate: {
@@ -119,7 +108,6 @@ export class Exercise {
   })
   tags: string[];
 
-  @Field(() => [Testcase]) // Array of Testcase type for GraphQL
   @Prop({
     type: [TestcaseSchema], // Use TestCase schema as a subdocument
     required: true,
@@ -127,7 +115,6 @@ export class Exercise {
   testcases: Testcase[];
 
   //score
-  @Field(() => Number)
   @Prop({ required: true })
   score: number;
 }

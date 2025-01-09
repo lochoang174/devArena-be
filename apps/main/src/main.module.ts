@@ -8,7 +8,6 @@ import { ConfigModule, ConfigService } from "@nestjs/config";
 import { MongooseModule } from "@nestjs/mongoose";
 import { EmailModule } from "./email/email.module";
 import { join } from "path";
-import { GraphExerciseModule } from "./graph-exercise/graph-exercise.module";
 import { GraphQLModule } from "@nestjs/graphql";
 import { ApolloDriver, ApolloDriverConfig } from "@nestjs/apollo";
 import { TestcaseModule } from "./testcase/testcase.module";
@@ -38,21 +37,8 @@ import { COMPILE_PACKAGE_NAME } from "@app/common";
     MongooseModelsModule,
     AuthModule,
     UserModule,
-
-    GraphQLModule.forRoot<ApolloDriverConfig>({
-      autoSchemaFile: join(__dirname, "schema.gql"), // Tạo schema tự động
-      playground: true, // Bật GraphQL Playground (dành cho việc thử nghiệm API)
-      context: ({ req }) => ({ req }), // Có thể thêm context nếu cần
-      path: "/graphql", // Định nghĩa endpoint của GraphQL
-      driver: ApolloDriver,
-      include: [GraphExerciseModule],
-      resolvers: { JSON: GraphQLJSON }, // Đăng ký JSON scalar
-
-    }),
-
     ExerciseModule,
     EmailModule,
-    GraphExerciseModule,
     TestcaseModule,
     AlgorithmModule,
     StudyModule,

@@ -2,12 +2,13 @@ import { Injectable, NotFoundException, UseGuards } from "@nestjs/common";
 import { CreateExerciseDto } from "./dto/create-exercise.dto";
 import { UpdateExerciseDto } from "./dto/update-exercise.dto";
 import { InjectModel } from "@nestjs/mongoose";
-import { Model } from "mongoose";
+import { Model, Types } from "mongoose";
 import { StudyDocument } from "../schemas/study.schema";
 import { Exercise, ExerciseDocument } from "../schemas/exercise.schema";
 import { RolesGuard } from "../auth/guards/role.guard";
 import { Roles } from "@app/common";
 import { CourseService } from "../course/course.service";
+import { Testcase } from "../schemas/testcase.schema";
 
 @Injectable()
 export class ExerciseService {
@@ -25,7 +26,19 @@ export class ExerciseService {
     const newExercise = new this.exerciseModel({});
     return newExercise.save();
   }
+  async findTestcaseById(exerciseId: string): Promise<Testcase[]> {
+    // Tìm tài liệu theo exerciseId
+    const objectId = new Types.ObjectId(exerciseId);
 
+    const exercise = await this.exerciseModel.findById(objectId).select("testcases").lean();
+    if (!exercise || !exercise.testcases) {
+      // Trả về mảng rỗng nếu không tìm thấy hoặc không có testcases
+      return [];
+    }
+  
+  
+    return exercise.testcases;
+  }
   // /**
   //  * Find all exercises
   //  */

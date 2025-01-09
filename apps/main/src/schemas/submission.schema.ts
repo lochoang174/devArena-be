@@ -10,7 +10,7 @@ export class Submission {
 
   @Prop({
     required: true,
-    enum: ["pending", "processing", "completed", "failed"],
+    enum: ["pending", "processing", "successfully", "failed"],
     default: "pending",
   })
   status: string;
@@ -20,6 +20,10 @@ export class Submission {
     type: Number,
   })
   score: number;
+
+  
+  @Prop()
+  result: string;
 
   @Prop({
     type: Boolean,
