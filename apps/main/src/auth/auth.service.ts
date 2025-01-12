@@ -63,8 +63,8 @@ export class AuthService {
     }
 
     // Remove password from response
-    const { role, _id, username, email } = user.toObject();
-    return { role, id:_id, username, email };
+    const { role, _id, username, email,providers } = user.toObject();
+    return { role, id:_id, username, email,providers };
   }
 
   async signup(signupDto: SignupDTO) {
@@ -121,9 +121,9 @@ export class AuthService {
     return newUser;
   }
   async login(user: IUser) {
-    console.log("user"+user);
+    console.log(user);
     const access_token = this.jwtService.sign(
-      {
+      { 
         id: user.id,
         role: user.role,
         username: user.username,
@@ -216,12 +216,14 @@ export class AuthService {
       );
 
       return { message: "OTP code sent successfully" };
-    } catch (error) {
+    } catch (error) { 
       throw error;
     }
   }
   
-
+  async addProvider(provider: string, email: string){
+    this.usersService.addProvider(provider,email)
+  }
   async refreshToken( old_refreshToken: string) {
     try {
 

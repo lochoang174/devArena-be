@@ -1,0 +1,18 @@
+version: '3.8'
+
+services:
+  openjdk:
+    image: openjdk:11
+    container_name: openjdk-container
+    volumes:
+      - ./src:/usr/src/app
+    working_dir: /usr/src/app
+
+  gcc:
+    image: gcc:latest
+    container_name: gcc-container
+    volumes:
+      - ./src:/usr/src/app
+    working_dir: /usr/src/app
+
+

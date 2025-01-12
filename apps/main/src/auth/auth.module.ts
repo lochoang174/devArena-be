@@ -8,10 +8,13 @@ import { JwtModule } from '@nestjs/jwt';
 import { PassportModule } from '@nestjs/passport';
 import { LocalStrategy } from './passports/local.strategy';
 import { JwtStrategy } from './passports/jwt.strategy';
+import { GoogleStrategy } from './passports/google.strategy';
+import { GithubStrategy } from './passports/github.strategy';
+import { DiscordStrategy } from './passports/discord.strategy';
 
 @Module({
   controllers: [AuthController],
-  providers: [AuthService,LocalStrategy,JwtStrategy],
+  providers: [AuthService,LocalStrategy,JwtStrategy,GoogleStrategy,GithubStrategy,DiscordStrategy],
   imports: [
     UserModule,
     EmailModule,

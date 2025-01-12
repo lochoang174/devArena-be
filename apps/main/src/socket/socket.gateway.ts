@@ -81,7 +81,7 @@ async getSolutionCode(exerciseId: string): Promise<string> {
   }
   @SubscribeMessage('compile')
   async compile2(
-    @MessageBody() data: { code: string; testCases: string[][], exerciseId: string },
+    @MessageBody() data: { code: string; testCases: string[][], exerciseId: string, language: string },
     @ConnectedSocket() client: Socket,
 
   ) {
@@ -89,8 +89,9 @@ async getSolutionCode(exerciseId: string): Promise<string> {
       code: data.code,
       codeSolution: await this.getSolutionCode(data.exerciseId),
       testcases: data.testCases.map((inputs) => ({ inputs })),
+      language: data.language
     };
-
+    console.log(data)
     const stream = this.compileService.runCompile(compileRequest);
 
     stream.subscribe({
@@ -109,7 +110,7 @@ async getSolutionCode(exerciseId: string): Promise<string> {
   }
   @SubscribeMessage('submit')
   async submit(
-    @MessageBody() data: { code: string, exerciseId: string, userId: string },
+    @MessageBody() data: { code: string, exerciseId: string, userId: string, language: string },
     @ConnectedSocket() client: Socket,
 
   ){
@@ -127,28 +128,36 @@ async getSolutionCode(exerciseId: string): Promise<string> {
         }
 
     })
+    console.log(payload)
     const codeSolution = await this.getSolutionCode(data.exerciseId)
-    const stream = this.compileService.runSubmit({
+    const stream = this.compileService.runSubmit({ 
       testcases:payload,
       code: data.code,
       codeSolution,
+      language: data.language
     });
   
     stream.subscribe({
-      next: (res) => {
+      next: async(res) => {
         if(res.status){
           client.emit('output_submit', res.status); // Truyền kết quả về client qua socket
 
         }else{
           const {result,score,status}=res.finalResult
+          let compareTime=0
           if(status===200){
-            console.log(status)
 
-            this.exerciseStatusService.updateStatusAndSubmission(data.userId,data.exerciseId,"completed",data.code,result,score,"successfully")
+            this.exerciseStatusService.updateStatusAndSubmission(data.userId,data.exerciseId,"completed",data.code,result,score,"successfully",res.finalResult.totalRuntime)
+            compareTime=await this.exerciseStatusService.compareRuntime(data.exerciseId,res.finalResult.totalRuntime)
           }else{
-            this.exerciseStatusService.updateStatusAndSubmission(data.userId,data.exerciseId,"in-progress",data.code,result,score,"failed")
+            this.exerciseStatusService.updateStatusAndSubmission(data.userId,data.exerciseId,"in-progress",data.code,result,score,"failed",res.finalResult.totalRuntime)
  
           }
+          client.emit('complete_submit', {
+            ...res.finalResult,
+            compareTime:compareTime
+          }); // Truyền kết quả về client qua socket
+
         }
       },
       error: (err) => {

@@ -17,6 +17,7 @@ export interface CompileRequest {
   codeSolution: string;
   /** Danh sách các testcase */
   testcases: TestCase[];
+  language: string;
 }
 
 export interface TestCase {
@@ -51,6 +52,7 @@ export interface FinalResult {
   score: number;
   /** Summary of results (e.g., "5/5") */
   result: string;
+  totalRuntime: number;
 }
 
 export const COMPILE_PACKAGE_NAME = "compile";

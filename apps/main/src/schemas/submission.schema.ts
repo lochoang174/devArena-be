@@ -30,6 +30,12 @@ export class Submission {
     default: false,
   })
   isPublic: boolean;
+
+  @Prop({
+    default: false,
+
+  })
+  totalTime?: number
 }
 
 export const SubmissionSchema = SchemaFactory.createForClass(Submission);

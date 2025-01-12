@@ -11,7 +11,7 @@ export enum ProviderEnum {
 }
 
 export enum RoleEnum {
-  ADMIN = 'admin',
+  ADMIN = 'admin',   
   CLIENT = 'client',
 }
 

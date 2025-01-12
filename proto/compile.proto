@@ -11,6 +11,7 @@ message CompileRequest {
   string code = 1;              // Mã nguồn để kiểm tra
   string codeSolution = 2;      // Mã nguồn giải pháp
   repeated TestCase testcases = 3; // Danh sách các testcase
+  string language =4;
 }
 
 message TestCase {
@@ -38,4 +39,6 @@ message FinalResult {
   int32 status = 1;   // HTTP-like status code (200, 400, etc.)
   double score = 2;   // Score of the submission
   string result = 3;  // Summary of results (e.g., "5/5")
+  double totalRuntime=4;
+
 }

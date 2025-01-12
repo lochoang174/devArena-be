@@ -25,7 +25,8 @@ async function bootstrap() {
     origin: '*',
     methods: 'GET,HEAD,PUT,PATCH,POST,DELETE,OPTIONS',
     allowedHeaders: 'Content-Type, Accept, Authorization',
-  });  app.useGlobalPipes(new ValidationPipe());
+  }); 
+   app.useGlobalPipes(new ValidationPipe());
   app.setGlobalPrefix("api");
   app.useGlobalInterceptors(new TransformInterceptor(reflector));
 

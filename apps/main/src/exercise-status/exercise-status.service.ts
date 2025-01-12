@@ -62,7 +62,8 @@ export class ExerciseStatusService {
     code: string,
     result: string,
     score: number,
-    submissionStatus: string
+    submissionStatus: string,
+    totalRuntime: number
   ) {
     const exerciseObjectId = new Types.ObjectId(exerciseId);
   
@@ -92,6 +93,7 @@ export class ExerciseStatusService {
       result,
       score,
       status: submissionStatus,
+      totalTime:totalRuntime
     });
   
     // Lưu tài liệu sau khi thay đổi
@@ -104,4 +106,33 @@ export class ExerciseStatusService {
     }).select("submission")
     return exerciseStatus
   }
+  async compareRuntime(exerciseId: string, time: number):Promise<number> {
+    // Bước 1: Tìm tất cả các exerciseStatus có status là 'completed'
+    const exerciseStatuses = await this.exerciseStatusModel
+      .find({ exerciseId: new Types.ObjectId(exerciseId), status: "completed" })
+      .populate('submission') // Đảm bảo chúng ta có thể truy cập các submission
+      .exec();
+  
+    // Bước 2: Lọc các submission có score = 100
+    const allPerfectSubmissions = exerciseStatuses
+      .flatMap(status => status.submission) // Lấy tất cả submission từ tất cả exerciseStatus
+      .filter(submission => submission.score === 100);
+  
+    if (allPerfectSubmissions.length === 0) {
+      throw new Error("No perfect submissions found for this exercise");
+    }
+  
+    // Bước 3: Tính tỷ lệ người có runtime nhanh hơn so với thời gian của người dùng truyền vào
+    const fasterCount = allPerfectSubmissions.filter(submission => submission.totalTime < time).length;
+  
+    // Bước 4: Tính tổng số submission có score = 100
+    const totalCount = allPerfectSubmissions.length;
+  
+    // Tính tỷ lệ: (tổng số người có runtime nhanh hơn / tổng số người) * 100
+    const percentage = ((fasterCount / totalCount) * 100);
+    return  percentage
+    
+  }
+  
+  
 }

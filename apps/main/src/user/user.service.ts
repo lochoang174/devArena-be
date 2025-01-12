@@ -1,10 +1,11 @@
 import { forwardRef, Injectable } from "@nestjs/common";
 import { CreateUserDto } from "./dto/create-user.dto";
 import { UpdateUserDto } from "./dto/update-user.dto";
-import { User } from "../schemas/user.schema";
+import { ProviderEnum, User } from "../schemas/user.schema";
 import { InjectModel } from "@nestjs/mongoose";
 import { Model } from "mongoose";
 import * as bcrypt from "bcrypt";
+import { CustomException } from "@app/common";
 
 @Injectable()
 export class UserService {
@@ -106,4 +107,19 @@ export class UserService {
       { refreshToken: refresh_token },
     );
   };
+  async addProvider(provider: string, email: string){
+    const user = await this.userModel.findOne({email}).exec()
+    if(!user){
+      throw new CustomException("Email has not been registried",403)
+
+    }
+    const checkExist = await user.providers.includes(provider as ProviderEnum)
+    if(checkExist){
+      throw new CustomException("Provider exist",400)
+    }
+    else{
+      user.providers.push(provider as ProviderEnum)
+      user.save()
+    }
+  }
 }

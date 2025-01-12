@@ -1,4 +1,4 @@
-import { Controller, Post, Body, HttpCode, HttpStatus, Param, HttpException, Res, Get, UseGuards } from '@nestjs/common';
+import { Controller, Post, Body, HttpCode, HttpStatus, Param, HttpException, Res, Get, UseGuards, Req, Query, Session } from '@nestjs/common';
 import { AuthService } from './auth.service';
 import { SignupDTO } from './dto/signup.dto';
 import { Response } from 'express';  // Import the Express Response type
@@ -10,6 +10,7 @@ import { Public, ResponseMessage } from '@app/common/decorators/customize';
 import { IUser } from '@app/common/types';
 import { MessagePattern, Payload } from '@nestjs/microservices';
 import { refreshDto } from './dto/refresh.dto';
+import { AuthGuard } from '@nestjs/passport';
 
 @Controller('auth')
 export class AuthController {
@@ -62,27 +63,80 @@ export class AuthController {
     return this.authService.refreshToken(payload.refreshToken)
   }
 
-  @MessagePattern('authenticate')
-  async authenticate(@Payload() data: any) {
-    return data.user;
+
+  @Get("/provider/google")
+  @Public()
+  @UseGuards(AuthGuard('google'))
+  async addProvider() {
+
+    // Redirect đến Google OAuth
+    return "Redirecting to Google OAuth...";
   }
-  // @Get('verify/:jwt')  
-  // @HttpCode(HttpStatus.CREATED)
-  // async verifyUser(
-  //   @Param('jwt') jwt: string,  // lấy jwt từ URL params
-  //   @Res({ passthrough: true }) response: Response
-  // ) {
-  //   try {
-  //     // Truyền thêm jwt vào hàm verifyUser để xử lý
-  //    await this.authService.verifyUser(jwt);
-      
-  //     // Redirect to the desired URL after success
-  //     return response.redirect('https://www.google.com/'); // Redirect to /home
-      
-  //   } catch (error) {
-  //     console.log(error)
-  //     throw new HttpException('Verification failed', HttpStatus.BAD_REQUEST);
-  //   }
-  // }
+  @Get('/google')
+  @Public()
+  @UseGuards(AuthGuard('google'))
+  async googleAuthRedirect(@Req() req, @Res() res) {
+
+    await this.authService.addProvider("google",req.user.email)
+    const isConnected = true; // Ví dụ kiểm tra trạng thái
+    const message = isConnected
+      ? 'Connect thành công'
+      : 'Gmail này đã được connect vào tài khoản khác';
   
+    // Redirect về FE với query parameters
+    res.redirect(
+      `http://localhost:3000/account-management?status=${isConnected ? 'success' : 'error'}&message=${encodeURIComponent(message)}`
+    );
+  }
+
+  @Get("/provider/github")
+  @Public()
+  @UseGuards(AuthGuard('github'))
+  async addgithubProvider(){
+    console.log("djalkdj")
+      return "data"
+  }
+  @Get('/github')
+  @Public()
+  @UseGuards(AuthGuard('github'))
+  async githubAuthRedirect(@Req() req, @Res() res) {
+    await this.authService.addProvider("github",req.user.email).catch((e)=>{
+      res.redirect(
+        `http://localhost:3000/account-management?status= 'error'}&message=loi}`
+      );
+    })
+    const isConnected = true; // Ví dụ kiểm tra trạng thái
+    const message = isConnected
+      ? 'Connect thành công'
+      : 'Gmail này đã được connect vào tài khoản khác';
+   
+    // Redirect về FE với query parameters
+    res.redirect(
+      `http://localhost:3000/account-management?status=${isConnected ? 'success' : 'error'}&message=${encodeURIComponent(message)}`
+    );
+  }
+
+  @Get("/provider/discord")
+  @Public()
+  @UseGuards(AuthGuard('discord'))
+  async adddiscordProvider(){
+    console.log("djalkdj")
+      return "data"
+  }
+  @Get('/discord')
+  @Public()
+  @UseGuards(AuthGuard('discord'))
+  async gitdiscordAuthRedirect(@Req() req, @Res() res) {
+    await this.authService.addProvider("discord",req.user.email)
+    const isConnected = true; // Ví dụ kiểm tra trạng thái
+    const message = isConnected
+      ? 'Connect thành công'
+      : 'Gmail này đã được connect vào tài khoản khác';
+  
+    // Redirect về FE với query parameters
+    res.redirect(
+      `http://localhost:3000/account-management?status=${isConnected ? 'success' : 'error'}&message=${encodeURIComponent(message)}`
+    );
+  }
+
 }
