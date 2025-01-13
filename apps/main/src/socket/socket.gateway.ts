@@ -89,9 +89,9 @@ async getSolutionCode(exerciseId: string): Promise<string> {
       code: data.code,
       codeSolution: await this.getSolutionCode(data.exerciseId),
       testcases: data.testCases.map((inputs) => ({ inputs })),
-      language: data.language
+      language: data.language,
     };
-    console.log(data)
+    console.log(compileRequest)
     const stream = this.compileService.runCompile(compileRequest);
 
     stream.subscribe({
@@ -100,7 +100,7 @@ async getSolutionCode(exerciseId: string): Promise<string> {
       },
       error: (err) => {
         console.log(err)
-        client.emit('error', { message: err.message });
+        client.emit('error', { message: err.details });
       },
       complete: () => {
         client.emit('completed', 'Biên dịch hoàn tất tất cả test cases');
@@ -135,8 +135,8 @@ async getSolutionCode(exerciseId: string): Promise<string> {
       code: data.code,
       codeSolution,
       language: data.language
-    });
-  
+    })
+   
     stream.subscribe({
       next: async(res) => {
         if(res.status){
@@ -160,9 +160,9 @@ async getSolutionCode(exerciseId: string): Promise<string> {
 
         }
       },
-      error: (err) => {
-        console.log(err)
-        client.emit('error', { message: err.message });
+      error: (error) => {
+        console.log(error.details)
+        client.emit('error', { message: error.details });
       },
       complete: () => {
         client.emit('completed', 'Biên dịch hoàn tất tất cả test cases');
