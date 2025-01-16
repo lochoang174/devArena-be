@@ -25,7 +25,7 @@ export class CompileService {
             data.codeSolution,
             data.testcases,
             data.language,
-          ).catch((error)=>{
+          ).catch((error) => {
             observer.error(
               new RpcException({
                 code: 13, // INTERNAL
@@ -92,7 +92,7 @@ export class CompileService {
         if (code === 124) {
           reject(new Error(`timeout`));
 
-      }
+        }
         if (code !== 0) {
           reject(new Error(`Error with exit code: ${code}`));
         }

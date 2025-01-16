@@ -15,7 +15,6 @@ import { StudyModule } from "./study/study.module";
 import { AlgorithmModule } from "./algorithm/algorithm.module";
 import { DatabaseModule } from "@app/common/databases";
 import { MongooseModelsModule } from "./schemas/mongoose.model";
-
 import { SubmissionModule } from "./submission/submission.module";
 import { CourseModule } from "./course/course.module";
 import { CourseStatusModule } from "./course-status/course-status.module";
@@ -25,6 +24,7 @@ import { SocketModule } from './socket/socket.module';
 import GraphQLJSON from "graphql-type-json";
 import { ClientsModule, Transport } from "@nestjs/microservices";
 import { COMPILE_PACKAGE_NAME } from "@app/common";
+import { AchievementModule } from './achievement/achievement.module';
 
 @Module({
   imports: [
@@ -47,10 +47,11 @@ import { COMPILE_PACKAGE_NAME } from "@app/common";
     CourseStatusModule,
     ExerciseStatusModule,
     SocketModule,
-  
+    AchievementModule,
+
   ],
   controllers: [MainController],
   providers: [MainService],
 
 })
-export class MainModule {}
+export class MainModule { }

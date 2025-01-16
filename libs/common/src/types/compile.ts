@@ -38,8 +38,8 @@ export interface CompileStatus {
 export interface CompileResult {
   /** Emit a CompileStatus for each test case */
   status?:
-    | CompileStatus
-    | undefined;
+  | CompileStatus
+  | undefined;
   /** Emit a FinalResult once all test cases are done */
   finalResult?: FinalResult | undefined;
 }
