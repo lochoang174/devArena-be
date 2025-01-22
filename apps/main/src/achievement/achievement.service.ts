@@ -14,6 +14,7 @@ export class AchievementService {
 
   async create(createAchievementDto: CreateAchievementDto):
     Promise<Achievement> {
+
     const newAchievement = new this.achievementModel(createAchievementDto);
     return newAchievement.save();
   }

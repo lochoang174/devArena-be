@@ -7,9 +7,14 @@ import { CurrentUser, IUser } from '@app/common';
 @Controller('exercise-status')
 export class ExerciseStatusController {
   constructor(private readonly exerciseStatusService: ExerciseStatusService) { }
-  @Get("/submission/:id")
-  async getSubmission(@Param("id") id: string, @CurrentUser() user: IUser) {
-    return await this.exerciseStatusService.getSubmission(user.id, id)
+  @Get("/exercise/:exerciseId/submission")
+  async getSubmissions(@Param("exerciseId") id: string, @CurrentUser() user: IUser) {
+    return await this.exerciseStatusService.getSubmissions(user.id, id)
+  }
+
+  @Get("/exercise/:exerciseId/submission/:submissionId")
+  async getSubmission(@Param("exerciseId") exerciseId: string, @Param("submissionId") submissionId: string, @CurrentUser() user: IUser) {
+    return await this.exerciseStatusService.getOneSubmission(user.id, exerciseId, submissionId)
   }
 
   @Post()

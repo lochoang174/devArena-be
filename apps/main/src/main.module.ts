@@ -25,10 +25,14 @@ import GraphQLJSON from "graphql-type-json";
 import { ClientsModule, Transport } from "@nestjs/microservices";
 import { COMPILE_PACKAGE_NAME } from "@app/common";
 import { AchievementModule } from './achievement/achievement.module';
+import { ServeStaticModule } from '@nestjs/serve-static';
 
 @Module({
   imports: [
-
+    ServeStaticModule.forRoot({
+      rootPath: join(__dirname, '..', 'uploads'),
+      serveRoot: '/uploads', // Serve files at /uploads
+    }),
     ConfigModule.forRoot({
       isGlobal: true,
       envFilePath: join(__dirname, "../../../apps/main/.env"),

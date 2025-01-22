@@ -1,6 +1,7 @@
 import { Prop, Schema, SchemaFactory } from "@nestjs/mongoose";
-import { Document } from "mongoose";
-
+import { Document, Types } from "mongoose";
+import { TestCase } from "@app/common";
+import { TestcaseSchema } from "./testcase.schema";
 export type SubmissionDocument = Submission & Document;
 
 @Schema({ timestamps: true })
@@ -32,10 +33,29 @@ export class Submission {
   isPublic: boolean;
 
   @Prop({
-    default: false,
+    default: 0,
 
   })
   totalTime?: number
+
+  @Prop()
+  compareTime?: number
+
+  @Prop({
+    type: TestcaseSchema,
+    required: false,
+  })
+  testcase?: {
+    output: string;
+    outputExpected: any;
+    input: [any];
+    hidden: boolean;
+  }
+
+  @Prop()
+  errorCode?: string;
+
+  _id?: Types.ObjectId;
 }
 
 export const SubmissionSchema = SchemaFactory.createForClass(Submission);

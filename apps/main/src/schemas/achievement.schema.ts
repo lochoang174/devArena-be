@@ -20,8 +20,8 @@ export class Achievement {
     })
     courseId: Types.ObjectId;
 
-    @Prop({ type: String, required: false })
-    image?: string;
+    @Prop({ type: String, required: true })
+    image: string;
 }
 
 export type AchievementDocument = Achievement & Document;

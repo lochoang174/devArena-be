@@ -6,6 +6,8 @@ import { Model, Types } from "mongoose";
 import { InjectModel } from "@nestjs/mongoose";
 import { ExerciseService } from "../exercise/exercise.service";
 import { stat } from "fs";
+import { Test } from "@nestjs/testing";
+import { TestCase } from "@app/common";
 
 @Injectable()
 export class ExerciseStatusService {
@@ -75,12 +77,19 @@ export class ExerciseStatusService {
   async updateStatusAndSubmission(
     userId: string,
     exerciseId: string,
-    exerciseStatus: string,
+    exerciseStatus: "in-progress" | "completed",
     code: string,
-    submissionStatus: string,
+    submissionStatus: "accepted" | "wrong answer" | "compile error",
+    errorCode?: string,
     result?: string,
-    score?: number,
-    totalRuntime?: number
+    totalRuntime?: number,
+    compareTime?: number,
+    testcase?: {
+      output: string;
+      outputExpected: any;
+      input: [any];
+      hidden: boolean;
+    },
   ) {
     const exerciseObjectId = new Types.ObjectId(exerciseId);
 
@@ -99,24 +108,34 @@ export class ExerciseStatusService {
         submission: [], // Khởi tạo mảng submission
       });
     } else {
-      exercise.status = exerciseStatus;
+      if (exerciseStatus === "completed")
+        exercise.status = exerciseStatus;
     }
 
-    if (totalRuntime) {
+    if (submissionStatus === "accepted") {
       exercise.submission.push({
         code,
         isPublic: false,
         result,
-        score,
         status: submissionStatus,
-        totalTime: totalRuntime
+        totalTime: totalRuntime,
+        compareTime,
       });
-    } else {
-      console.log("no result")
+    } else if (submissionStatus === "wrong answer") {
       exercise.submission.push({
         code,
         isPublic: false,
         result,
+        status: submissionStatus,
+        totalTime: totalRuntime,
+        testcase,
+      });
+    }
+    else {
+      exercise.submission.push({
+        code,
+        isPublic: false,
+        errorCode,
         status: submissionStatus,
       });
     }
@@ -124,13 +143,38 @@ export class ExerciseStatusService {
     // Lưu tài liệu sau khi thay đổi
     await exercise.save();
   }
-  async getSubmission(userId: string, exerciseId: string) {
+  async getSubmissions(userId: string, exerciseId: string) {
     const exerciseStatus = await this.exerciseStatusModel.findOne({
       userId,
       exerciseId
-    }).select("submission")
+    }).select({
+      "submission.status": 1,
+      "submission.result": 1,
+      "submission.totalTime": 1,
+      "submission.createdAt": 1,
+      "submission._id": 1,
+      status: 1, // Top-level field
+      result: 1, // Top-level field
+      totalTime: 1, // Top-level field
+      createdAt: 1, // Top-level field
+      _id: 1
+    })
+      .exec();
     return exerciseStatus
   }
+
+  async getOneSubmission(userId: string, exerciseId: string, submissionId: string) {
+    const exerciseStatus = await this.exerciseStatusModel.findOne({
+      userId,
+      exerciseId,
+    }).select("submission")
+
+    const submission = exerciseStatus.submission.find(submission => submission._id.toString() === submissionId)
+
+
+    return submission
+  }
+
   async compareRuntime(exerciseId: string, time: number): Promise<number> {
     // Bước 1: Tìm tất cả các exerciseStatus có status là 'completed'
     const exerciseStatuses = await this.exerciseStatusModel
@@ -138,14 +182,18 @@ export class ExerciseStatusService {
       .populate('submission') // Đảm bảo chúng ta có thể truy cập các submission
       .exec();
 
-    // Bước 2: Lọc các submission có score = 100
+    console.log("exerciseStatuses", exerciseStatuses)
+
+    // Bước 2: Lọc các submission có status là 'accepted'
     const allPerfectSubmissions = exerciseStatuses
       .flatMap(status => status.submission) // Lấy tất cả submission từ tất cả exerciseStatus
-      .filter(submission => submission.score === 100);
+      .filter(submission => submission.status === "accepted"); // Lọc ra các submission có status là 'accepted'
 
-    // if (allPerfectSubmissions.length === 0) {
-    //   throw new Error("No perfect submissions found for this exercise");
-    // }
+    console.log("allPerfectSubmissions", allPerfectSubmissions)
+
+    if (allPerfectSubmissions.length === 0) {
+      return 0;
+    }
 
     // Bước 3: Tính tỷ lệ người có runtime nhanh hơn so với thời gian của người dùng truyền vào
     const fasterCount = allPerfectSubmissions.filter(submission => submission.totalTime < time).length;

@@ -13,8 +13,7 @@ export class CreateAchievementDto {
     @IsMongoId()
     courseId: string;
 
-    @IsOptional()
+    @IsNotEmpty()
     @IsString()
-    @IsUrl({}, { message: 'image must be a valid URL' }) // Optional URL validation if you're storing the image as a URL
-    image?: string;
+    image: string;
 }

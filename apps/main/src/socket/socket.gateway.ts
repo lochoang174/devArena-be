@@ -45,7 +45,7 @@ export class SocketGateway implements OnGatewayConnection, OnModuleInit {
     private exerciseService: ExerciseService,
     private exerciseStatusService: ExerciseStatusService,
     @Inject(COMPILE_SERVICE_NAME) private client: ClientGrpc,
-  ) {}
+  ) { }
   onModuleInit() {
     this.compileService =
       this.client.getService<CompileServiceClient>(COMPILE_SERVICE_NAME);
@@ -186,59 +186,65 @@ export class SocketGateway implements OnGatewayConnection, OnModuleInit {
     stream.subscribe({
       next: async (res) => {
         if (res.status) {
+          console.log("res.status", res.status);
           arrayStatus.push(res.status);
         } else {
           const { result, score, status } = res.finalResult;
-          let compareTime = 0;
+
           if (status === 200) {
+            const compareTime = await this.exerciseStatusService.compareRuntime(
+              data.exerciseId,
+              res.finalResult.totalRuntime,
+            );
             this.exerciseStatusService.updateStatusAndSubmission(
               data.userId,
               data.exerciseId,
               "completed",
               data.code,
               "accepted",
+              "",
               result,
-              score,
               res.finalResult.totalRuntime,
+              compareTime,
             );
-            compareTime = await this.exerciseStatusService.compareRuntime(
-              data.exerciseId,
-              res.finalResult.totalRuntime,
-            );
+            client.emit("complete_submit", {
+              ...res.finalResult,
+              compareTime: compareTime,
+            }); // Truyền kết quả về client qua socket
+
           } else {
+            const testcaseIncorrect = tc
+              .find((ele, index) =>
+                arrayStatus.some(
+                  (arrayStatus) => arrayStatus.testCaseIndex === index &&
+                    !arrayStatus.isCorrect,
+                ),
+              );
+
+            const testcase = {
+              ...testcaseIncorrect, output: arrayStatus.find(
+                (arrayStatus) => !arrayStatus.isCorrect,
+              ).output,
+              outputExpected: testcaseIncorrect.output,
+            };
             this.exerciseStatusService.updateStatusAndSubmission(
               data.userId,
               data.exerciseId,
               "in-progress",
               data.code,
               "wrong answer",
+              "",
               result,
-              score,
               res.finalResult.totalRuntime,
+              0,
+              testcase,
             );
+            client.emit("complete_submit", {
+              ...res.finalResult,
+              testcase,
+            });
           }
-          client.emit("complete_submit", {
-            ...res.finalResult,
-            testcases: tc
-              .filter((ele, index) =>
-                arrayStatus.some(
-                  (arrayStatus) =>
-                    arrayStatus.testCaseIndex === index &&
-                    !arrayStatus.isCorrect,
-                ),
-              )
-              .map((ele, index) => ({
-                ...ele,
-                output: arrayStatus.find(
-                  (arrayStatus) =>
-                    arrayStatus.testCaseIndex === index &&
-                    !arrayStatus.isCorrect,
-                ).output,
-                outputExpected: ele.output,
-              })),
-            arrayStatus,
-            compareTime: compareTime,
-          }); // Truyền kết quả về client qua socket
+
         }
       },
       error: (error) => {
@@ -248,6 +254,7 @@ export class SocketGateway implements OnGatewayConnection, OnModuleInit {
           "in-progress",
           data.code,
           "compile error",
+          error.details,
           `0/${tc.length}`,
         );
         client.emit("error", { message: error.details });
