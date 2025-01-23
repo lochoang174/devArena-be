@@ -13,7 +13,7 @@ export class CreateAchievementDto {
     @IsMongoId()
     courseId: string;
 
-    @IsNotEmpty()
+    @IsOptional()
     @IsString()
     image: string;
 }
