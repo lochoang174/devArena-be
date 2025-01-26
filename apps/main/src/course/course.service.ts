@@ -16,6 +16,7 @@ export class CourseService {
   ) { }
   create(createCourseDto: CreateCourseDto) {
     const createdCourse = new this.courseModel(createCourseDto);
+    
     return createdCourse.save();
   }
   findAll() {

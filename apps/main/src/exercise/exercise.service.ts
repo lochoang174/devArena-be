@@ -24,6 +24,7 @@ export class ExerciseService {
 
   async create(createExerciseDto: CreateExerciseDto): Promise<Exercise> {
     const newExercise = new this.exerciseModel({});
+    
     return newExercise.save();
   }
   async findTestcaseById(exerciseId: string): Promise<Testcase[]> {

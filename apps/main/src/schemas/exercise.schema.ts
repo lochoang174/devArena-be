@@ -79,6 +79,7 @@ export const PredefinedTags = [
   "quickselect",
   "suffix-array",
   "bucket-sort",
+  "contest",
 ];
 
 @Schema({

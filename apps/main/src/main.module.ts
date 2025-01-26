@@ -25,6 +25,9 @@ import { SocketModule } from './socket/socket.module';
 import GraphQLJSON from "graphql-type-json";
 import { ClientsModule, Transport } from "@nestjs/microservices";
 import { COMPILE_PACKAGE_NAME } from "@app/common";
+import { ContestDescriptionModule } from './contest-description/contest-description.module';
+import { ContestExerciseModule } from './contest-exercise/contest-exercise.module';
+import { ContestStatusModule } from './contest-status/contest-status.module';
 
 @Module({
   imports: [
@@ -47,6 +50,9 @@ import { COMPILE_PACKAGE_NAME } from "@app/common";
     CourseStatusModule,
     ExerciseStatusModule,
     SocketModule,
+    ContestDescriptionModule,
+    ContestExerciseModule,
+    ContestStatusModule,
   
   ],
   controllers: [MainController],
