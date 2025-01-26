@@ -14,7 +14,7 @@ import { DiscordStrategy } from './passports/discord.strategy';
 
 @Module({
   controllers: [AuthController],
-  providers: [AuthService,LocalStrategy,JwtStrategy,GoogleStrategy,GithubStrategy,DiscordStrategy],
+  providers: [AuthService, LocalStrategy, JwtStrategy, GoogleStrategy, GithubStrategy, DiscordStrategy],
   imports: [
     UserModule,
     EmailModule,
@@ -25,5 +25,4 @@ import { DiscordStrategy } from './passports/discord.strategy';
     }),
   ],
 })
-export class AuthModule {}   
- 
+export class AuthModule { }

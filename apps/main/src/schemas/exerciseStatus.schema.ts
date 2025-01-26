@@ -36,7 +36,7 @@ export const ExerciseStatusSchema =
 ExerciseStatusSchema.index({ userId: 1, exerciseId: 1 }, { unique: true });
 
 
-ExerciseStatusSchema.post("save", async function (doc: ExerciseStatusDocument,next) {
+ExerciseStatusSchema.post("save", async function (doc: ExerciseStatusDocument, next) {
   if (doc.status === "completed") {
     // Import the models dynamically to avoid circular dependency
     const CourseStatusModel = this.model('CourseStatusModel') as Model<CourseStatusDocument>;
@@ -44,7 +44,7 @@ ExerciseStatusSchema.post("save", async function (doc: ExerciseStatusDocument,ne
 
     const ExerciseStatusModel = this.model('ExerciseStatusModel') as Model<ExerciseStatusDocument>;
 
-    const exercise = await StudyModel.findOne({_id:doc.exerciseId._id}).populate("courseId");
+    const exercise = await StudyModel.findOne({ _id: doc.exerciseId._id }).populate("courseId");
     if (!exercise) {
       console.error("Unable to find exercise or associated course.");
       return;
@@ -53,7 +53,7 @@ ExerciseStatusSchema.post("save", async function (doc: ExerciseStatusDocument,ne
     const courseId = exercise.courseId._id;
 
     // // Retrieve all exercises in the same course
-    const exercisesInCourse = await StudyModel.find({ courseId:courseId.toString() }).exec()
+    const exercisesInCourse = await StudyModel.find({ courseId: courseId.toString() }).exec()
     console.log(courseId)
     // Retrieve statuses for the user's exercises in the course
     const exerciseStatuses = await ExerciseStatusModel.find({
