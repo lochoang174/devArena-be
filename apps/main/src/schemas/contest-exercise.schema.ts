@@ -1,8 +1,9 @@
 import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
 import { Exercise } from './exercise.schema';
+import { Types } from 'mongoose';
 
 @Schema()
-export class Algorithm extends Exercise {
+export class ContestExercise extends Exercise {
   @Prop([
     {
       language: String,
@@ -18,6 +19,9 @@ export class Algorithm extends Exercise {
     },
   ])
   defaultCode: { language: string; code: string }[];
+
+  @Prop({ required: true, type: Types.ObjectId, ref: 'ContestDescription' })
+  contestId: Types.ObjectId;
 }
-export type AlgorithmDocument = Algorithm & Document;
-export const AlgorithmSchema = SchemaFactory.createForClass(Algorithm);
+export type ContestExerciseDocument = ContestExercise & Document;
+export const ContestExerciseSchema = SchemaFactory.createForClass(ContestExercise);
