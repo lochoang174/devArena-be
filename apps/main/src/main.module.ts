@@ -26,6 +26,7 @@ import { ClientsModule, Transport } from "@nestjs/microservices";
 import { COMPILE_PACKAGE_NAME } from "@app/common";
 import { AchievementModule } from './achievement/achievement.module';
 import { ServeStaticModule } from '@nestjs/serve-static';
+import { AchievementStatusModule } from './achievement-status/achievement-status.module';
 
 @Module({
   imports: [
@@ -52,6 +53,7 @@ import { ServeStaticModule } from '@nestjs/serve-static';
     ExerciseStatusModule,
     SocketModule,
     AchievementModule,
+    AchievementStatusModule,
 
   ],
   controllers: [MainController],

@@ -8,6 +8,8 @@ import { AlgorithmSchema } from "./algorithm.schema";
 import { ExerciseStatusSchema } from "./exerciseStatus.schema";
 import { CourseStatusSchema } from "./courseStatus.schema";
 import { CourseSchema } from "./course.schema";
+import { AchievementSchema } from "./achievement.schema";
+import { AchievementStatusSchema } from "./achievementStatus.schema";
 
 export const EXERCISE_MODEL = "ExerciseModel";
 export const STUDY_MODEL = "StudyModel";
@@ -16,6 +18,8 @@ export const ALGORITHM_MODEL = "AlgorithmModel";
 export const COURSE_MODEL = "CourseModel";
 export const COURSE_STATUS_MODEL = "CourseStatusModel";
 export const EXERCISE_STATUS_MODEL = "ExerciseStatusModel";
+export const ACHIEVEMENT_MODEL = "AchievementModel";
+export const ACHIEVEMENT_STATUS_MODEL = "AchievementStatusModel";
 const MODELS = [
   {
     name: "ExerciseModel",
@@ -29,6 +33,8 @@ const MODELS = [
   { name: COURSE_MODEL, schema: CourseSchema },
   { name: COURSE_STATUS_MODEL, schema: CourseStatusSchema },
   { name: EXERCISE_STATUS_MODEL, schema: ExerciseStatusSchema },
+  { name: ACHIEVEMENT_MODEL, schema: AchievementSchema },
+  { name: ACHIEVEMENT_STATUS_MODEL, schema: AchievementStatusSchema },
 ];
 
 @Global()
@@ -71,6 +77,16 @@ const MODELS = [
       useFactory: (exerciseStatusModel) => exerciseStatusModel,
       inject: [getModelToken(EXERCISE_STATUS_MODEL)],
     },
+    {
+      provide: ACHIEVEMENT_MODEL,
+      useFactory: (achievementModel) => achievementModel,
+      inject: [getModelToken(ACHIEVEMENT_MODEL)],
+    },
+    {
+      provide: ACHIEVEMENT_STATUS_MODEL,
+      useFactory: (achievementStatusModel) => achievementStatusModel,
+      inject: [getModelToken(ACHIEVEMENT_STATUS_MODEL)],
+    },
   ],
   imports: [DatabaseModule, DatabaseModule.forFeature(MODELS)],
   exports: [
@@ -81,6 +97,8 @@ const MODELS = [
     COURSE_MODEL,
     COURSE_STATUS_MODEL,
     EXERCISE_STATUS_MODEL,
+    ACHIEVEMENT_MODEL,
+    ACHIEVEMENT_STATUS_MODEL,
   ],
 })
-export class MongooseModelsModule {}
+export class MongooseModelsModule { }

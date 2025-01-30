@@ -27,6 +27,7 @@ export class StudyService {
     id: string,
     updateStudyDto: Partial<CreateStudyDto>,
   ): Promise<Study> {
+    console.log(id, updateStudyDto);
     return this.studyModel
       .findByIdAndUpdate(new Types.ObjectId(id), updateStudyDto, { new: true })
       .exec();

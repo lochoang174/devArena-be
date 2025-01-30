@@ -1,4 +1,5 @@
 import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
+import { truncate } from 'fs';
 import { Types, Document } from 'mongoose';
 
 @Schema({ timestamps: true })
@@ -8,20 +9,23 @@ export class Achievement {
 
     @Prop({
         type: Number,
-        enum: [25, 50, 75, 100, 125, 150],
-        default: 25,
+        enum: [25, 50, 75, 100, 125, 150], // Mongoose will validate against these values
+        required: true,
+        default: 25, // Default value
     })
     requiredScore: number;
 
+
     @Prop({
         type: Types.ObjectId,
-        ref: 'CourseModel',
         required: true,
     })
-    courseId: Types.ObjectId;
+    refId: Types.ObjectId;
 
     @Prop({ type: String, required: true })
     image: string;
+
+    _id: string;
 }
 
 export type AchievementDocument = Achievement & Document;

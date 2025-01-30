@@ -18,7 +18,7 @@ export class Testcase {
   })
   output: any;
 
-  @Prop({ type: String || Number || Object, required: true })
+  @Prop({ type: String || Number || Object, required: false })
   outputExpected?: any; // Explicitly define a type here (string, number, etc.).
 
   @Prop({
