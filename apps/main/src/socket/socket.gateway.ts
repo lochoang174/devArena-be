@@ -202,7 +202,6 @@ export class SocketGateway implements OnGatewayConnection, OnModuleInit {
           console.log(userExecution)
           if (res.LogRunCode) {
             const index = res.LogRunCode.testCaseIndex;
-            
             // Tìm testcase hiện tại trong array
             const existingTestcaseIndex = userExecution.testcases.findIndex(
               tc => tc.exerciseId === data.exerciseId && tc.testcaseIndex === index
@@ -234,7 +233,6 @@ export class SocketGateway implements OnGatewayConnection, OnModuleInit {
           //     }
           //   }
           // });
-          console.log(userExecution.sockets)
           this.server.to([...userExecution.sockets]).emit(
             res.status ? 'output' : 'output_compile',
             res.status || res.LogRunCode
@@ -246,6 +244,8 @@ export class SocketGateway implements OnGatewayConnection, OnModuleInit {
         },
         complete: () => {
           const userExecution = this.userExecutionMap.get(userId);
+          // console.log(userExecution.testcases)
+
           if (userExecution) {
             // Lọc bỏ testcases thuộc exerciseId hiện tại
             userExecution.testcases = userExecution.testcases.filter(tc => tc.exerciseId !== data.exerciseId);

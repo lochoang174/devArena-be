@@ -16,8 +16,10 @@ import {
   compileJava,
   startProcess,
   getProcessOutput,
+  checkThreadSleep,
 } from "../utils/helper";
 import { RpcException } from "@nestjs/microservices";
+import { v4 as uuidv4 } from "uuid";
 
 @Injectable()
 export class CompileService {
@@ -27,7 +29,15 @@ export class CompileService {
     return new Observable<CompileResult>((observer) => {
       (async () => {
         try {
-          const tempDir = path.join(__dirname, "../temp");
+          if(!checkThreadSleep(data.code)){
+            observer.error(
+              new RpcException({
+                code: 14,
+                message: `Thread sleep must less than 1000ms`,
+              }),
+            );
+          }
+          const tempDir = path.join(__dirname, "../temp", uuidv4());
           await fs.mkdir(tempDir, { recursive: true });
 
           // 1. Compile solution code once
@@ -136,7 +146,7 @@ export class CompileService {
       const outputHandler = (data: Buffer) => {
         output += data.toString();
         if(isUser){
-          console.log("output", data.toString());
+          // console.log("output", data.toString());
           subscriber.next({
               LogRunCode:{
                 chunk: data.toString(),

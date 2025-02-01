@@ -213,5 +213,15 @@ async function startProcess(
     throw new Error(error);
   }
 }
-
-export { compileJava, compileC, compileCpp, startProcess, getProcessOutput };
+const checkThreadSleep = (code: string): boolean => {
+  const threadSleepPattern = /Thread\.sleep\((\d+)\)/g;
+  let match;
+  while ((match = threadSleepPattern.exec(code)) !== null) {
+    const sleepTime = parseInt(match[1], 10);
+    if (sleepTime >= 1000) {
+      return false;
+    }
+  }
+  return true;
+};
+export { compileJava, compileC, compileCpp, startProcess, getProcessOutput,checkThreadSleep };
