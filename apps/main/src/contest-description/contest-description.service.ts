@@ -16,7 +16,10 @@ export class ContestDescriptionService {
   async create(createContestDescriptionDto: CreateContestDescriptionDto) {
     try {
       const createdContestDescription = new this.contestDescriptionModel(
-        createContestDescriptionDto,
+        {
+          ...createContestDescriptionDto,
+          status: "draft",
+        }
       );
       return await createdContestDescription.save();
     } catch (error) {
@@ -64,6 +67,10 @@ export class ContestDescriptionService {
     }
   }
 
+  async publish(id: string) {
+    return await this.contestDescriptionModel.findByIdAndUpdate(id, { status: "published" }, { new: true }).exec();
+  }
+
   async remove(id: string) {
     try {
       const deletedContestDescription = await this.contestDescriptionModel
@@ -76,6 +83,13 @@ export class ContestDescriptionService {
       return deletedContestDescription;
     } catch (error) {
       throw new Error(`Failed to delete contest description: ${error.message}`);
+    }
+  }
+  async findByStatus(status: string) {
+    try {
+      return await this.contestDescriptionModel.find({ status: status }).exec();
+    } catch (error) {
+      throw new Error(`Failed to fetch contest exercises by status: ${error.message}`);
     }
   }
 }

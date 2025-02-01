@@ -20,7 +20,7 @@ import { CourseModule } from "./course/course.module";
 import { CourseStatusModule } from "./course-status/course-status.module";
 import { ExerciseStatusModule } from "./exercise-status/exercise-status.module";
 import { PassportModule } from "@nestjs/passport";
-import { SocketModule } from './socket/socket.module';
+import { SocketModule } from './socket/socket.module'; 
 import GraphQLJSON from "graphql-type-json";
 import { ClientsModule, Transport } from "@nestjs/microservices";
 import { COMPILE_PACKAGE_NAME } from "@app/common";
@@ -33,7 +33,7 @@ import { ServeStaticModule } from '@nestjs/serve-static';
 @Module({
   imports: [
     ServeStaticModule.forRoot({
-      rootPath: join(__dirname, '..', 'uploads'),
+      rootPath: join(__dirname, '../../../apps/main/', 'uploads'), 
       serveRoot: '/uploads', // Serve files at /uploads
     }),
     ConfigModule.forRoot({

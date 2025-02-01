@@ -3,7 +3,7 @@ package compile;
 
 service CompileService {
   // Hàm xử lý compile code với danh sách testcase
-  rpc runCompile (CompileRequest) returns (stream CompileStatus);
+  rpc runCompile (CompileRequest) returns (stream CompileResult);
   rpc runSubmit (CompileRequest) returns (stream CompileResult);
 }
 
@@ -31,6 +31,7 @@ message CompileResult {
   oneof result {
     CompileStatus status = 1; // Emit a CompileStatus for each test case
     FinalResult finalResult = 2; // Emit a FinalResult once all test cases are done
+    LogRunCode LogRunCode=3;
   }
 }
 
@@ -40,5 +41,10 @@ message FinalResult {
   double score = 2;   // Score of the submission
   string result = 3;  // Summary of results (e.g., "5/5")
   double totalRuntime=4;
+
+}
+message LogRunCode {
+  int32 testCaseIndex = 1;    
+  string chunk=2; 
 
 }

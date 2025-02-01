@@ -38,10 +38,11 @@ export interface CompileStatus {
 export interface CompileResult {
   /** Emit a CompileStatus for each test case */
   status?:
-  | CompileStatus
-  | undefined;
+    | CompileStatus
+    | undefined;
   /** Emit a FinalResult once all test cases are done */
   finalResult?: FinalResult | undefined;
+  LogRunCode?: LogRunCode | undefined;
 }
 
 /** The final result contains status, score, and result summary */
@@ -55,12 +56,17 @@ export interface FinalResult {
   totalRuntime: number;
 }
 
+export interface LogRunCode {
+  testCaseIndex: number;
+  chunk: string;
+}
+
 export const COMPILE_PACKAGE_NAME = "compile";
 
 export interface CompileServiceClient {
   /** Hàm xử lý compile code với danh sách testcase */
 
-  runCompile(request: CompileRequest): Observable<CompileStatus>;
+  runCompile(request: CompileRequest): Observable<CompileResult>;
 
   runSubmit(request: CompileRequest): Observable<CompileResult>;
 }
@@ -68,7 +74,7 @@ export interface CompileServiceClient {
 export interface CompileServiceController {
   /** Hàm xử lý compile code với danh sách testcase */
 
-  runCompile(request: CompileRequest): Observable<CompileStatus>;
+  runCompile(request: CompileRequest): Observable<CompileResult>;
 
   runSubmit(request: CompileRequest): Observable<CompileResult>;
 }

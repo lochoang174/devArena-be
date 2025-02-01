@@ -39,7 +39,7 @@ const MODELS = [
   { name: ALGORITHM_MODEL, schema: AlgorithmSchema },
   { name: CONTEST_DESCRIPTION_MODEL, schema: ContestDescriptionSchema },
   { name: CONTEST_STATUS_MODEL, schema: ContestStatusSchema },
-  { name: CONTEST_EXERCISE_MODEL, schema: ContestExerciseSchema },
+  // { name: CONTEST_EXERCISE_MODEL, schema: ContestExerciseSchema },
 ];
 
 @Global()
