@@ -1,4 +1,4 @@
-import { Controller, Post, Body, HttpCode, HttpStatus, Param, HttpException, Res, Get, UseGuards, Req, Query, Session } from '@nestjs/common';
+import { Controller, Post, Body, HttpCode, HttpStatus, Param, HttpException, Res, Get, UseGuards, Req, Query, Session, Put, UseInterceptors, UploadedFile } from '@nestjs/common';
 import { AuthService } from './auth.service';
 import { SignupDTO } from './dto/signup.dto';
 import { Response } from 'express';  // Import the Express Response type
@@ -11,6 +11,10 @@ import { IUser } from '@app/common/types';
 import { MessagePattern, Payload } from '@nestjs/microservices';
 import { refreshDto } from './dto/refresh.dto';
 import { AuthGuard } from '@nestjs/passport';
+import { diskStorage } from 'multer';
+import { FileInterceptor } from '@nestjs/platform-express';
+import * as path from 'path';
+import { UpdateProfileDto } from './dto/updateProfile';
 
 @Controller('auth')
 export class AuthController {
@@ -139,4 +143,37 @@ export class AuthController {
     );
   }
 
+
+  @Post('update-profile')
+  @HttpCode(HttpStatus.OK)
+  @ResponseMessage("Profile updated successfully")
+  @UseInterceptors(FileInterceptor('image', {
+    storage: diskStorage({
+      destination: './uploads/profile', // Directory to save the uploaded images
+      filename: (req, file, cb) => {
+        const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1e9);
+        const ext = path.extname(file.originalname);
+        const filename = `${file.fieldname}-${uniqueSuffix}${ext}`;
+        cb(null, filename);
+      },
+    }),
+    fileFilter: (req, file, cb) => {
+      if (!file.mimetype.match(/\/(jpg|jpeg|png|gif)$/)) {
+        cb(new Error('Unsupported file type'), false);
+      } else {
+        cb(null, true);
+      }
+    },
+  }))
+  async updateProfile(
+    @CurrentUser() user: IUser,
+    @Body() updateProfileDto: UpdateProfileDto,
+    @UploadedFile() file: Express.Multer.File,
+
+  ) {
+    if(file){
+      updateProfileDto.image= file.filename
+    }
+    return this.authService.updateProfile(user.id, updateProfileDto);
+  }
 }

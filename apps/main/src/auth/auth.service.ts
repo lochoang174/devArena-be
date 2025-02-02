@@ -286,4 +286,15 @@ export class AuthService {
     }
   }
 
+  async updateProfile(userId: string, updateData: Partial<IUser>) {
+    // Remove sensitive fields from updateData
+    const { password, role, email, ...safeUpdateData } = updateData;
+    
+    const updatedUser = await this.usersService.update(userId, safeUpdateData);
+    return { 
+      message: "Profile updated successfully",
+      user: updatedUser
+    };
+  }
+
 }
