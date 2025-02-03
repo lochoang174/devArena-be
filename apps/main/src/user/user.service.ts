@@ -6,6 +6,7 @@ import { InjectModel } from "@nestjs/mongoose";
 import { Model } from "mongoose";
 import * as bcrypt from "bcrypt";
 import { CustomException } from "@app/common";
+import { UpdateProfileDto } from "../auth/dto/updateProfile";
 
 @Injectable()
 export class UserService {
@@ -56,9 +57,9 @@ export class UserService {
     return user;
   }
 
-  update(id: string) {
-    const user = this.userModel.findByIdAndUpdate();
-    return `This action updates a #${id} user`;
+  async update(id: string, updateUser:UpdateProfileDto ) {
+    const user =await this.userModel.findByIdAndUpdate(id,{...updateUser},{new:true});
+    return user;
   }
   async verifyUser(userId: string) {
     try {

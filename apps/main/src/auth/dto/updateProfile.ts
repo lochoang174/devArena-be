@@ -8,7 +8,7 @@ export class UpdateProfileDto {
 
     @IsOptional()
 
-    image?: string;
+    avatar?: string;
 
 
 

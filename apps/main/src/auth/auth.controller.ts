@@ -1,4 +1,4 @@
-import { Controller, Post, Body, HttpCode, HttpStatus, Param, HttpException, Res, Get, UseGuards, Req, Query, Session, Put, UseInterceptors, UploadedFile } from '@nestjs/common';
+import { Controller, Post, Body, HttpCode, HttpStatus, Param, HttpException, Res, Get, UseGuards, Req, Query, Session, Put, UseInterceptors, UploadedFile, BadRequestException } from '@nestjs/common';
 import { AuthService } from './auth.service';
 import { SignupDTO } from './dto/signup.dto';
 import { Response } from 'express';  // Import the Express Response type
@@ -147,9 +147,9 @@ export class AuthController {
   @Post('update-profile')
   @HttpCode(HttpStatus.OK)
   @ResponseMessage("Profile updated successfully")
-  @UseInterceptors(FileInterceptor('image', {
+  @UseInterceptors(FileInterceptor('avatar', {
     storage: diskStorage({
-      destination: './uploads/profile', // Directory to save the uploaded images
+      destination: './apps/main/uploads/profile', // Directory to save the uploaded images
       filename: (req, file, cb) => {
         const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1e9);
         const ext = path.extname(file.originalname);
@@ -159,7 +159,7 @@ export class AuthController {
     }),
     fileFilter: (req, file, cb) => {
       if (!file.mimetype.match(/\/(jpg|jpeg|png|gif)$/)) {
-        cb(new Error('Unsupported file type'), false);
+          throw new BadRequestException("Not supported type")
       } else {
         cb(null, true);
       }
@@ -172,8 +172,16 @@ export class AuthController {
 
   ) {
     if(file){
-      updateProfileDto.image= file.filename
+      updateProfileDto.avatar= file.filename
     }
     return this.authService.updateProfile(user.id, updateProfileDto);
   }
+
+  @Public()
+  async forgot_password(){
+
+  } 
+  async update_password(){
+    
+  } 
 }

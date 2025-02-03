@@ -16,6 +16,10 @@ import { JwtService } from "@nestjs/jwt";
 import { ConfigService } from "@nestjs/config";
 import { ProviderDTO } from "./dto/provider.dto";
 import { IUser } from "@app/common/types";
+import { join } from "path";
+import { unlink } from "fs/promises";
+import { UpdateProfileDto } from "./dto/updateProfile";
+
 @Injectable()
 export class AuthService {
   constructor(
@@ -286,14 +290,27 @@ export class AuthService {
     }
   }
 
-  async updateProfile(userId: string, updateData: Partial<IUser>) {
-    // Remove sensitive fields from updateData
-    const { password, role, email, ...safeUpdateData } = updateData;
-    
-    const updatedUser = await this.usersService.update(userId, safeUpdateData);
-    return { 
-      message: "Profile updated successfully",
-      user: updatedUser
+  async updateProfile(userId: string, updateData: UpdateProfileDto) {
+    if (updateData.avatar !== null) {
+      const oldUser = await this.usersService.findOne(userId);
+      
+      // Nếu user có ảnh cũ và có ảnh mới được upload
+      if (oldUser.avatar && updateData.avatar) {
+        try {
+          // Xóa file ảnh cũ trong thư mục uploads (cùng cấp với src)
+          const oldAvatarPath = join(process.cwd(), './apps/main/uploads', '/profile', oldUser.avatar);
+          await unlink(oldAvatarPath);
+        } catch (error) {
+          console.log('Error deleting old avatar:', error);
+        }
+      }
+    }
+
+    const updatedUser = await this.usersService.update(userId, updateData);
+    return {
+      _id: updatedUser._id,
+      avatar: updateData.avatar,
+      username: updatedUser.username
     };
   }
 
