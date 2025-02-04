@@ -42,7 +42,7 @@ export class SocketGateway implements OnGatewayConnection, OnModuleInit {
     string,
     {
       sockets: Set<string>;
-      testcases: { exerciseId: string; testcaseIndex: number; value: any }[];
+      testcases: { exerciseId: string; testcaseIndex: number; value: any; outputExpected?: any, isCorrect?:boolean }[];
     }
   >();
   constructor(
@@ -199,7 +199,7 @@ export class SocketGateway implements OnGatewayConnection, OnModuleInit {
           }
   
           const userExecution = this.userExecutionMap.get(userId);
-          console.log(userExecution)
+          // console.log(userExecution)
           if (res.LogRunCode) {
             const index = res.LogRunCode.testCaseIndex;
             // Tìm testcase hiện tại trong array
@@ -221,6 +221,12 @@ export class SocketGateway implements OnGatewayConnection, OnModuleInit {
   
             // Đảm bảo array được sắp xếp theo testcaseIndex
             userExecution.testcases.sort((a, b) => a.testcaseIndex - b.testcaseIndex);
+          }
+          if(res.status){
+            userExecution.testcases[res.status.testCaseIndex].isCorrect = res.status.isCorrect;
+            userExecution.testcases[res.status.testCaseIndex].outputExpected = res.status.outputExpect;
+
+
           }
           // userExecution.sockets.forEach((socketId) => {
           //   const socket = this.server.sockets.sockets.get(socketId);
@@ -253,7 +259,7 @@ export class SocketGateway implements OnGatewayConnection, OnModuleInit {
             // Cập nhật lại userExecutionMap
             this.userExecutionMap.set(userId, userExecution);
           }
-          console.log(this.userExecutionMap)
+          // console.log(this.userExecutionMap)
           client.emit(
             "completed",
             `Biên dịch hoàn tất tất cả test cases cho user ${userId}`,
