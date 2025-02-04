@@ -42,15 +42,17 @@ export class CompileService {
 
           // 1. Compile solution code once
           await this.compileCode(data.codeSolution, data.language, tempDir);
-          const solutionProcess = await startProcess(data.language, tempDir);
 
           // 2. Compile user code once
           await this.compileCode(data.code, data.language, tempDir);
-          const userProcess = await startProcess(data.language, tempDir);
 
           // 3. Run each test case
           for (let i = 0; i < data.testcases.length; i++) {
             try {
+              const solutionProcess = await startProcess(data.language, tempDir);
+
+              const userProcess = await startProcess(data.language, tempDir);
+
               // Chỉ gửi input, không gửi marker
               const testInput = data.testcases[i].inputs.join(" ") + "\n";
 
@@ -72,7 +74,9 @@ export class CompileService {
                 output: userOutput.trim(),
                 outputExpect: expectedOutput.trim(),
               };
-
+      // Clean up processes
+      solutionProcess.kill();
+      userProcess.kill();
               observer.next({
                 status:status
               });
@@ -87,9 +91,7 @@ export class CompileService {
             }
           }
 
-          // Clean up processes
-          solutionProcess.kill();
-          userProcess.kill();
+    
 
           observer.complete();
         } catch (error) {
