@@ -19,6 +19,7 @@ import { IUser } from "@app/common/types";
 import { join } from "path";
 import { unlink } from "fs/promises";
 import { UpdateProfileDto } from "./dto/updateProfile";
+import { UpdatePasswordDto } from "./dto/update-password.dto";
 
 @Injectable()
 export class AuthService {
@@ -67,8 +68,9 @@ export class AuthService {
     }
 
     // Remove password from response
-    const { role, _id, username, email, providers } = user.toObject();
-    return { role, id: _id, username, email, providers };
+    const { role, _id, username, email, providers,avatar } = user.toObject();
+    const url_profile= this.configService.get("URL_PROFILE")
+    return { role, id: _id, username, email, providers, avatar:`${url_profile}/${avatar}` };
   }
 
   async signup(signupDto: SignupDTO) {
@@ -291,8 +293,9 @@ export class AuthService {
   }
 
   async updateProfile(userId: string, updateData: UpdateProfileDto) {
+    const oldUser = await this.usersService.findOne(userId);
+
     if (updateData.avatar !== null) {
-      const oldUser = await this.usersService.findOne(userId);
       
       // Nếu user có ảnh cũ và có ảnh mới được upload
       if (oldUser.avatar && updateData.avatar) {
@@ -306,12 +309,38 @@ export class AuthService {
       }
     }
 
-    const updatedUser = await this.usersService.update(userId, updateData);
+    const updatedUser = await this.usersService.update(userId, {...oldUser,...updateData});
+    const url_profile= this.configService.get("URL_PROFILE")
+
     return {
-      _id: updatedUser._id,
-      avatar: updateData.avatar,
+      ...(updateData.avatar && { avatar: `${url_profile}/${updateData.avatar}` }),
       username: updatedUser.username
     };
+    
   }
+  async updatePassword(userId: string, updateDto: UpdatePasswordDto) {
+    const user = await this.usersService.findOne(userId);
+    if (!user) {
+      throw new BadRequestException("User not found.");
+    }
 
+    if (updateDto.isCreatePassword) {
+      // Nếu cần kiểm tra mật khẩu cũ
+      // const isOldPasswordValid = await this.hashService.compareHash(
+      //   updateDto.oldPassword,
+      //   user.password
+      // );
+      const isOldPasswordValid = await compare(updateDto.oldPassword, user.password);
+
+      if (!isOldPasswordValid) {
+        throw new BadRequestException("Old password is incorrect.");
+      }
+    }
+
+    // Hash mật khẩu mới và cập nhật
+    const newHashedPassword = await  await bcrypt.hash(updateDto.newPassword, 10);
+    await this.usersService.update(userId, {... user,password:  newHashedPassword, isCreatePassword:true});
+
+    return { message: "Password updated successfully." };
+  }
 }

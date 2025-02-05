@@ -57,7 +57,7 @@ export class UserService {
     return user;
   }
 
-  async update(id: string, updateUser:UpdateProfileDto ) {
+  async update(id: string, updateUser:User ) {
     const user =await this.userModel.findByIdAndUpdate(id,{...updateUser},{new:true});
     return user;
   }

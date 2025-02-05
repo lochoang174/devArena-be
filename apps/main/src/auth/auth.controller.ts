@@ -15,6 +15,7 @@ import { diskStorage } from 'multer';
 import { FileInterceptor } from '@nestjs/platform-express';
 import * as path from 'path';
 import { UpdateProfileDto } from './dto/updateProfile';
+import { UpdatePasswordDto } from './dto/update-password.dto';
 
 @Controller('auth')
 export class AuthController {
@@ -181,7 +182,9 @@ export class AuthController {
   async forgot_password(){
 
   } 
-  async update_password(){
-    
+  @Post("/update_password")
+  async update_password(@CurrentUser() user: IUser, @Body() updateDto: UpdatePasswordDto){
+
+    return 
   } 
 }
