@@ -34,7 +34,7 @@ import { AchievementStatusModule } from './achievement-status/achievement-status
 @Module({
   imports: [
     ServeStaticModule.forRoot({
-      rootPath: join(__dirname, '..', 'uploads'),
+      rootPath: join(__dirname, '../../../apps/main/', 'uploads'), 
       serveRoot: '/uploads', // Serve files at /uploads
     }),
     ConfigModule.forRoot({
