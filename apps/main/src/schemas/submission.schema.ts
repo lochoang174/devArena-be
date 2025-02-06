@@ -11,10 +11,11 @@ export class Submission {
 
   @Prop({
     required: true,
-    enum: ["pending", "processing", "accepted", "wrong answer", "compile error"],
+    enum: ["pending", "processing", "accepted", "wrong answer", "compile error","successfully","failed"],
     default: "pending",
   })
   status: string;
+
 
   @Prop({
     required: false,
@@ -50,10 +51,10 @@ export class Submission {
     outputExpected: any;
     input: [any];
     hidden: boolean;
-  }
+  } 
 
   @Prop()
-  errorCode?: string;
+  errorCode?: string; 
 
   _id?: Types.ObjectId;
 }

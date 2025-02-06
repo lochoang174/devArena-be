@@ -38,14 +38,19 @@ import e from "express";
 export class SocketGateway implements OnGatewayConnection, OnModuleInit {
   @WebSocketServer() server: Server;
   private compileService: CompileServiceClient;
-
+  private userExecutionMap = new Map<
+    string,
+    {
+      sockets: Set<string>;
+      testcases: { exerciseId: string; testcaseIndex: number; value: any; outputExpected?: any, isCorrect?:boolean }[];
+    }
+  >();
   constructor(
-    private readonly socketService: SocketService,
     private studyService: StudyService,
     private exerciseService: ExerciseService,
     private exerciseStatusService: ExerciseStatusService,
     @Inject(COMPILE_SERVICE_NAME) private client: ClientGrpc,
-  ) { }
+  ) {}
   onModuleInit() {
     this.compileService =
       this.client.getService<CompileServiceClient>(COMPILE_SERVICE_NAME);
@@ -66,21 +71,69 @@ export class SocketGateway implements OnGatewayConnection, OnModuleInit {
   }
 
   // Register a user with a uniqueId
+  // @SubscribeMessage("register")
+  // handleRegister(
+  //   @MessageBody() data: { uniqueId: string },
+  //   @ConnectedSocket() client: Socket,
+  // ) {
+  //   console.log(`User registered with uniqueId: ${data.uniqueId}`);
+
+  //   // Associate the client with their uniqueId
+  //   client.data.uniqueId = data.uniqueId;
+
+  //   // (Optional) Send response back to client
+  //   client.emit("registered", { message: "User registered successfully" });
+  // }
+
   @SubscribeMessage("register")
   handleRegister(
-    @MessageBody() data: { uniqueId: string },
+    @MessageBody() data: { uniqueId: string; exerciseId: string },
     @ConnectedSocket() client: Socket,
   ) {
-    console.log(`User registered with uniqueId: ${data.uniqueId}`);
 
-    // Associate the client with their uniqueId
+    // Gán uniqueId cho client
     client.data.uniqueId = data.uniqueId;
-    this.socketService.associateClientWithUniqueId(client.id, data.uniqueId);
 
-    // (Optional) Send response back to client
+    // Nếu user chưa tồn tại trong map, khởi tạo mới
+    if (!this.userExecutionMap.has(data.uniqueId)) {
+      this.userExecutionMap.set(data.uniqueId, {
+        sockets: new Set(),
+        testcases: [],
+      });
+    }
+
+    const userExecution = this.userExecutionMap.get(data.uniqueId);
+
+    // Thêm socketId mới vào danh sách sockets của user
+    userExecution.sockets.add(client.id);
+
+    // Tìm testcase có exerciseId khớp và index cao nhất
+   
+    console.log(this.userExecutionMap)
+    // Gửi lại testcase mới nhất nếu có
+    if (userExecution.testcases) {
+      console.log("second")
+      console.log(userExecution.sockets)
+      client.emit("restoreExecution", userExecution.testcases);
+    }
+
+    // Cập nhật lại map
+    this.userExecutionMap.set(data.uniqueId, userExecution);
+
+    // Thông báo đăng ký thành công
     client.emit("registered", { message: "User registered successfully" });
   }
-
+  handleDisconnect(client: Socket) {
+    console.log(`User ${client.id} disconnected`);
+    // this.userExecutionMap.forEach((execution, userId) => {
+    //   execution.sockets.delete(client.id);
+    //   if (execution.sockets.size === 0) {
+    //     console.log(`Removing user ${userId} from map because no sockets left`);
+    //     this.userExecutionMap.delete(userId);
+    //   }
+    // });
+  }
+  
   // This is an example of handling a custom message from a client
   @SubscribeMessage("sendMessage")
   handleMessage(
@@ -108,6 +161,11 @@ export class SocketGateway implements OnGatewayConnection, OnModuleInit {
       if (!userId) {
         throw new Error("User information is missing");
       }
+      const userExecutionChecking = this.userExecutionMap.get(userId);
+      if(userExecutionChecking.testcases.length>0){
+        client.emit("error", { message: "User run code too many times. Please try again in a few seconds" });
+        return 
+      }
       const compileRequest = {
         code: data.code,
         codeSolution: await this.getSolutionCode(data.exerciseId),
@@ -130,13 +188,83 @@ export class SocketGateway implements OnGatewayConnection, OnModuleInit {
       const stream = this.compileService.runCompile(compileRequest);
 
       stream.subscribe({
-        next: (status) => {
-          client.emit("output", status);
+        // next: (res) => {
+        //   if (res.status) {
+        //     client.emit("output", res.status);
+        //   } else if (res.LogRunCode) {
+        //     client.emit("output_compile", res.LogRunCode);
+        //   }
+        // },
+        next: (res) => {
+          if (!this.userExecutionMap.has(userId)) {
+            this.userExecutionMap.set(userId, {
+              sockets: new Set(),
+              testcases: [],
+            });
+          }
+  
+          const userExecution = this.userExecutionMap.get(userId);
+          // console.log(userExecution)
+          if (res.LogRunCode) {
+            const index = res.LogRunCode.testCaseIndex;
+            // Tìm testcase hiện tại trong array
+            const existingTestcaseIndex = userExecution.testcases.findIndex(
+              tc => tc.exerciseId === data.exerciseId && tc.testcaseIndex === index
+            );
+  
+            if (existingTestcaseIndex === -1) {
+              // Nếu chưa có, thêm mới
+              userExecution.testcases.push({
+                exerciseId: data.exerciseId,
+                testcaseIndex: index,
+                value: res.LogRunCode.chunk,
+              });
+            } else {
+              // Nếu đã có, update value
+              userExecution.testcases[existingTestcaseIndex].value += res.LogRunCode.chunk;
+            }
+  
+            // Đảm bảo array được sắp xếp theo testcaseIndex
+            userExecution.testcases.sort((a, b) => a.testcaseIndex - b.testcaseIndex);
+          }
+          if(res.status){
+            userExecution.testcases[res.status.testCaseIndex].isCorrect = res.status.isCorrect;
+            userExecution.testcases[res.status.testCaseIndex].outputExpected = res.status.outputExpect;
+
+
+          }
+          // userExecution.sockets.forEach((socketId) => {
+          //   const socket = this.server.sockets.sockets.get(socketId);
+          //   if (socket) {
+             
+          //     if (res.status) {
+          //       socket.emit("output", res.status);
+          //     } else if (res.LogRunCode) {
+          //       socket.emit("output_compile", res.LogRunCode);
+          //     }
+          //   }
+          // });
+          this.server.to([...userExecution.sockets]).emit(
+            res.status ? 'output' : 'output_compile',
+            res.status || res.LogRunCode
+          );
+          this.userExecutionMap.set(userId, userExecution);
         },
         error: (err) => {
           client.emit("error", { message: err.details });
         },
         complete: () => {
+          const userExecution = this.userExecutionMap.get(userId);
+          // console.log(userExecution.testcases)
+
+          if (userExecution) {
+            // Lọc bỏ testcases thuộc exerciseId hiện tại
+            userExecution.testcases = userExecution.testcases.filter(tc => tc.exerciseId !== data.exerciseId);
+        
+            // Cập nhật lại userExecutionMap
+            this.userExecutionMap.set(userId, userExecution);
+          }
+          // console.log(this.userExecutionMap)
           client.emit(
             "completed",
             `Biên dịch hoàn tất tất cả test cases cho user ${userId}`,
@@ -170,11 +298,10 @@ export class SocketGateway implements OnGatewayConnection, OnModuleInit {
       return {
         // inputs: temp as string[][],
         // output: ele.output,
-        output: ele.output,
+        output: ele.outputExpected,
         inputs: temp,
       };
     });
-
     const codeSolution = await this.getSolutionCode(data.exerciseId);
     const stream = this.compileService.runSubmit({
       testcases: payload,
@@ -211,21 +338,19 @@ export class SocketGateway implements OnGatewayConnection, OnModuleInit {
               ...res.finalResult,
               compareTime: compareTime,
             }); // Truyền kết quả về client qua socket
-
           } else {
-            const testcaseIncorrect = tc
-              .find((ele, index) =>
-                arrayStatus.some(
-                  (arrayStatus) => arrayStatus.testCaseIndex === index &&
-                    !arrayStatus.isCorrect,
-                ),
-              );
+            const testcaseIncorrect = tc.find((ele, index) =>
+              arrayStatus.some(
+                (arrayStatus) =>
+                  arrayStatus.testCaseIndex === index && !arrayStatus.isCorrect,
+              ),
+            );
 
             const testcase = {
-              ...testcaseIncorrect, output: arrayStatus.find(
-                (arrayStatus) => !arrayStatus.isCorrect,
-              ).output,
-              outputExpected: testcaseIncorrect.output,
+              ...testcaseIncorrect,
+              output: arrayStatus.find((arrayStatus) => !arrayStatus.isCorrect)
+                .output,
+              outputExpected: testcaseIncorrect.outputExpected,
             };
             this.exerciseStatusService.updateStatusAndSubmission(
               data.userId,
@@ -244,7 +369,6 @@ export class SocketGateway implements OnGatewayConnection, OnModuleInit {
               testcase,
             });
           }
-
         }
       },
       error: (error) => {

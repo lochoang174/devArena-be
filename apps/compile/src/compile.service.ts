@@ -2,64 +2,88 @@ import {
   CompileRequest,
   CompileResult,
   CompileStatus,
+  LogRunCode,
   TestCase,
 } from "@app/common";
 import { Injectable } from "@nestjs/common";
-import { Observable } from "rxjs";
-import { Readable } from "stream";
-import { ChildProcessWithoutNullStreams, spawn } from "child_process";
+import { Observable, Subscriber } from "rxjs";
+import { ChildProcessWithoutNullStreams } from "child_process";
 import * as fs from "fs/promises";
 import * as path from "path";
-import { startCompilation } from "../utils/helper";
+import {
+  compileC,
+  compileCpp,
+  compileJava,
+  startProcess,
+  getProcessOutput,
+  checkThreadSleep,
+} from "../utils/helper";
 import { RpcException } from "@nestjs/microservices";
-import { Metadata } from "@grpc/grpc-js";
+import { v4 as uuidv4 } from "uuid";
 
 @Injectable()
 export class CompileService {
-  compile(data: CompileRequest): Observable<CompileStatus> {
-    return new Observable<CompileStatus>((observer) => {
+  private readonly TESTCASE_MARKER = "###ENDTEST###\n";
+
+  compile(data: CompileRequest): Observable<CompileResult> {
+    return new Observable<CompileResult>((observer) => {
       (async () => {
         try {
-          // 1. Chạy solution code để lấy đáp án
-          const expectedOutputs = await this.runSolutionCode(
-            data.codeSolution,
-            data.testcases,
-            data.language,
-          ).catch((error) => {
+          if(!checkThreadSleep(data.code)){
             observer.error(
               new RpcException({
-                code: 13, // INTERNAL
-                message: `${error.message}`,
+                code: 14,
+                message: `Thread sleep must less than 1000ms`,
               }),
             );
-          })
-          console.log(data);
-          // 2. Chạy code của người dùng và so sánh với đáp án
+          }
+          const tempDir = path.join(__dirname, "../temp", uuidv4());
+          await fs.mkdir(tempDir, { recursive: true });
+
+          // 1. Compile solution code once
+          await this.compileCode(data.codeSolution, data.language, tempDir);
+
+          // 2. Compile user code once
+          await this.compileCode(data.code, data.language, tempDir);
+
+          // 3. Run each test case
           for (let i = 0; i < data.testcases.length; i++) {
             try {
-              const process = await startCompilation(
-                data.code,
-                data.testcases[i].inputs,
-                data.language,
-              );
-              const userOutput = await this.getProcessOutput(process);
+              const solutionProcess = await startProcess(data.language, tempDir);
 
-              const isCorrect = userOutput.trim() === expectedOutputs[i].trim();
+              const userProcess = await startProcess(data.language, tempDir);
+
+              // Chỉ gửi input, không gửi marker
+              const testInput = data.testcases[i].inputs.join(" ") + "\n";
+
+              // Gửi input đồng thời cho cả 2 process
+              solutionProcess.stdin.write(testInput);
+              userProcess.stdin.write(testInput);
+
+              // Chạy song song việc lấy output
+              const [expectedOutput, userOutput] = await Promise.all([
+                this.getTestCaseOutput(solutionProcess,false,observer,i),
+                this.getTestCaseOutput(userProcess,true,observer,i),
+              ]); 
+
+              const isCorrect = userOutput.trim() === expectedOutput.trim();
 
               const status: CompileStatus = {
                 testCaseIndex: i,
                 isCorrect,
                 output: userOutput.trim(),
-                outputExpect: expectedOutputs[i].trim(),
+                outputExpect: expectedOutput.trim(),
               };
-
-              // Push kết quả vào Observable
-              observer.next(status);
+      // Clean up processes
+      solutionProcess.kill();
+      userProcess.kill();
+              observer.next({
+                status:status
+              });
             } catch (error) {
-              console.log(error)
               observer.error(
                 new RpcException({
-                  code: 13, // INTERNAL
+                  code: 13,
                   message: `${error.message}`,
                 }),
               );
@@ -67,158 +91,172 @@ export class CompileService {
             }
           }
 
+    
+
           observer.complete();
         } catch (error) {
-          observer.error({ message: error.details });
+          observer.error(
+            new RpcException({
+              code: 13,
+              message: `${error.message}`,
+            }),
+          );
         }
       })();
     });
   }
 
-  async getProcessOutput(
+  private async compileCode(
+    code: string,
+    language: string,
+    tempDir: string,
+  ): Promise<void> {
+    switch (language) {
+      case "java":
+        await compileJava(tempDir, code);
+        break;
+      case "c":
+        await compileC(tempDir, code);
+        break;
+      case "cpp":
+        await compileCpp(tempDir, code);
+        break;
+      default:
+        throw new Error("Unsupported language");
+    }
+  }
+
+  private async getTestCaseOutput(
     process: ChildProcessWithoutNullStreams,
+    isUser:boolean,
+    subscriber:Subscriber<CompileResult>,
+    testCaseIndex:number
   ): Promise<string> {
     return new Promise<string>((resolve, reject) => {
       let output = "";
-      process.stdout.on("data", (data) => {
-        output += data.toString();
-      });
+      let timer: NodeJS.Timeout | null = null;
 
+      const completeOutput = () => {
+        if (timer) {
+          clearTimeout(timer);
+          timer = null;
+        }
+        process.stdout.removeListener("data", outputHandler);
+        resolve(output);
+      };
+
+      const outputHandler = (data: Buffer) => {
+        output += data.toString();
+        if(isUser){
+          // console.log("output", data.toString());
+          subscriber.next({
+              LogRunCode:{
+                chunk: data.toString(),
+                testCaseIndex:testCaseIndex
+              }
+          })
+        }
+        // Reset timer mỗi khi nhận được data mới
+        if (timer) {
+          clearTimeout(timer);
+        }
+
+        // Đợi 100ms sau chunk cuối cùng để kết thúc
+        timer = setTimeout(() => {
+          completeOutput();
+        }, 1000);
+      };
+
+      // Xử lý lỗi
       process.stderr.on("data", (data) => {
+        if (timer) {
+          clearTimeout(timer);
+        }
         reject(new Error(data.toString()));
       });
 
-      process.on("close", (code) => {
-        if (code === 124) {
-          reject(new Error(`timeout`));
-
-        }
-        if (code !== 0) {
-          reject(new Error(`Error with exit code: ${code}`));
-        }
-        resolve(output);
-      });
+      process.stdout.on("data", outputHandler);
     });
-  }
-
-  async runSolutionCode(
-    codeSolution: string,
-    testCases: TestCase[],
-    language: string,
-  ): Promise<string[]> {
-    const solutionResults: string[] = [];
-    for (let i = 0; i < testCases.length; i++) {
-      try {
-        const process = await startCompilation(
-          codeSolution,
-          testCases[i].inputs,
-          language,
-        );
-        const output = await this.getProcessOutput(process);
-        solutionResults.push(output.trim());
-      } catch (error) {
-        throw new Error(
-          error
-        );
-      }
-    }
-    return solutionResults;
   }
 
   submit(data: CompileRequest): Observable<CompileResult> {
     return new Observable<CompileResult>((observer) => {
       (async () => {
         try {
-          let correctCount = 0; // Track correct test cases
-          let totalRuntime = 0; // Track total runtime
-          let totalCPUUsage = 0; // Track total CPU usage
-
+          const tempDir = path.join(__dirname, "../temp", uuidv4());
+          await fs.mkdir(tempDir, { recursive: true });
+  
+          // 2. Compile user code once
+          await this.compileCode(data.code, data.language, tempDir);
+  
+          let correctCount = 0;
+          let totalRuntime = 0;
+  
           for (let i = 0; i < data.testcases.length; i++) {
             try {
-              // Record initial CPU usage and time
-              const startCpuUsage = process.cpuUsage(); // Node.js global process
-              const startTime = process.hrtime(); // Node.js global process
-
-              // Run the compilation
-              const compilationProcess = await startCompilation(
-                data.code,
-                data.testcases[i].inputs,
-                data.language,
-              );
-              const userOutput =
-                await this.getProcessOutput(compilationProcess);
-              // Record end time and CPU usage
-              const endCpuUsage = process.cpuUsage(startCpuUsage); // Node.js global process
-              const endTime = process.hrtime(startTime); // Node.js global process
-
-              // Calculate runtime in milliseconds
-              const runtime = endTime[0] * 1000 + endTime[1] / 1e6; // seconds to ms
+              const userProcess = await startProcess(data.language, tempDir);
+  
+              const startTime = Date.now(); // Bắt đầu đo thời gian
+              const testInput = data.testcases[i].inputs.join(" ") + "\n";
+              userProcess.stdin.write(testInput);
+  
+              const userOutput = await this.getTestCaseOutput(userProcess, false, observer, i);
+              const endTime = Date.now(); // Kết thúc đo thời gian
+  
+              const runtime = endTime - startTime; // Tính thời gian chạy (ms)
               totalRuntime += runtime;
-
-              // Calculate CPU usage in microseconds
-              const cpuTime = (endCpuUsage.user + endCpuUsage.system) / 1000; // Convert to ms
-              totalCPUUsage += cpuTime;
-
-              const isCorrect =
-                userOutput.trim() === data.testcases[i].output.trim();
-
+  
+              const isCorrect = userOutput.trim() === data.testcases[i].output.trim();
+  
               const status: CompileStatus = {
                 testCaseIndex: i,
                 isCorrect,
                 output: userOutput.trim(),
                 outputExpect: data.testcases[i].output.trim(),
+
               };
-
-              // Push the result of this test case
+  
               observer.next({ status });
-
+              userProcess.kill();
+  
               if (isCorrect) {
                 correctCount++;
               }
             } catch (error) {
-              // console.log(error);
-
-              // throw new RpcException({
-              //   code: 13, // INTERNAL
-              //   message: 'Compilation Service Error',
-              // });
-              // observer.error({ testCaseId: i + 1, error: error });
               observer.error(
                 new RpcException({
-                  code: 13, // INTERNAL
+                  code: 13,
                   message: `${error.message}`,
-                }),
+                })
               );
               return;
             }
           }
-
-          // Calculate score
+  
           const totalTestCases = data.testcases.length;
           const score = (correctCount / totalTestCases) * 100;
           const result = `${correctCount}/${totalTestCases}`;
-
-          // Return final result with performance metrics
+  
           observer.next({
             finalResult: {
               result,
               score,
               status: score === 100 ? 200 : 400,
-              totalRuntime: totalRuntime,
+              totalRuntime: totalRuntime, // Tổng thời gian chạy
             },
           });
-
+  
           observer.complete();
         } catch (error) {
-          // const metadata = new Metadata();
-          // metadata.set('details', error); // Thêm chi tiết lỗi vào metadata
-          // throw new RpcException({
-          //   code: 13, // INTERNAL
-          //   message: 'Compilation Service Error',
-          // });
-          // observer.error({});
+          observer.error(
+            new RpcException({
+              code: 13,
+              message: `${error.message}`,
+            })
+          );
         }
       })();
     });
   }
+  
 }

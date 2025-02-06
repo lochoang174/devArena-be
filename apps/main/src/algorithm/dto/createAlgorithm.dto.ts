@@ -7,7 +7,7 @@ import {
 } from "class-validator";
 import { Type } from "class-transformer";
 
-class codeDto {
+export class codeDto {
   @IsString()
   language: string;
 

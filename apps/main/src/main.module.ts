@@ -20,7 +20,7 @@ import { CourseModule } from "./course/course.module";
 import { CourseStatusModule } from "./course-status/course-status.module";
 import { ExerciseStatusModule } from "./exercise-status/exercise-status.module";
 import { PassportModule } from "@nestjs/passport";
-import { SocketModule } from './socket/socket.module';
+import { SocketModule } from './socket/socket.module'; 
 import GraphQLJSON from "graphql-type-json";
 import { ClientsModule, Transport } from "@nestjs/microservices";
 import { COMPILE_PACKAGE_NAME } from "@app/common";

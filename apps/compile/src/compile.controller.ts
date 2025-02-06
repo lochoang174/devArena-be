@@ -17,7 +17,7 @@ export class CompileController implements CompileServiceController {
       }  
   }
 
-  runCompile(request: CompileRequest): Observable<CompileStatus> {
+  runCompile(request: CompileRequest): Observable<CompileResult> {
     try {
     return this.compileService.compile(request)
       

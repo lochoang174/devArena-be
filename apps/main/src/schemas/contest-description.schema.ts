@@ -22,12 +22,14 @@ export class ContestDescription {
   @Prop({ default: 0 })
   participantsCount: number;
 
+  @Prop({ required: true })
+  image: string;
 
 
   @Prop({ default: "draft", enum: ["draft", "published", "completed"] })
   status: string;
 
-  
+
 }
 
 export const ContestDescriptionSchema =
