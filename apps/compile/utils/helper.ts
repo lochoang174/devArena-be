@@ -1,3 +1,4 @@
+// helper.ts
 import { spawn, ChildProcessWithoutNullStreams } from "child_process";
 import * as fs from "fs/promises";
 import * as path from "path";
@@ -74,7 +75,7 @@ async function compileC(tempDir: string, code: string): Promise<void> {
   });
 }
 
-// Compile C++ code
+// Compile C++ code 
 async function compileCpp(tempDir: string, code: string): Promise<void> {
   const fileName = "solution.cpp";
   const filePath = path.join(tempDir, fileName);
@@ -110,75 +111,117 @@ async function compileCpp(tempDir: string, code: string): Promise<void> {
   });
 }
 
-// Main function to handle compilation and execution
-async function startCompilation(
-  code: string,
-  testCase: string[],
+async function getProcessOutput(
+  process: ChildProcessWithoutNullStreams,
+): Promise<string> {
+  return new Promise<string>((resolve, reject) => {
+    let output = "";
+    let outputBuffer = "";
+
+    process.stdout.on("data", (data) => {
+      outputBuffer += data.toString();
+    });
+
+    process.stderr.on("data", (data) => {
+      reject(new Error(data.toString()));
+    });
+
+    process.on("close", (code) => {
+      if (code === 124) {
+        reject(new Error("timeout"));
+      }
+      if (code !== 0) {
+        reject(new Error(`Error with exit code: ${code}`));
+      }
+      resolve(outputBuffer);
+    });
+  });
+}
+
+// Start process after compilation
+async function startProcess(
   language: string,
+  tempDir: string,
 ): Promise<ChildProcessWithoutNullStreams> {
   try {
-    const tempDir = path.join(__dirname, "../temp");
-    await fs.mkdir(tempDir, { recursive: true });
-
     if (language === "java") {
-      await compileJava(tempDir, code);
       return spawn("docker", [
         "run",
         "-i",
         "--rm",
         "--memory",
-        "100m", // Giới hạn bộ nhớ container là 100MB
+        "100m",
         "--memory-swap",
-        "100m", // Không cho phép swap thêm bộ nhớ
+        "100m",
         "--cpus",
-        "1", // (Tùy chọn) Giới hạn sử dụng CPU, nếu cần
+        "1",
         "-v",
-        `${tempDir}:/usr/src/app`, // Mount thư mục
+        `${tempDir}:/usr/src/app`,
         "-w",
-        "/usr/src/app", // Thư mục làm việc trong container
-        "openjdk:11", // Sử dụng image OpenJDK 11
+        "/usr/src/app",
+        "openjdk:11",
         "timeout",
-        "10s", // Giới hạn thời gian chạy là 5 giây
+        "30s",
         "java",
         "-cp",
-        ".", 
-        "Solution",
-        ...testCase, // Truyền các test case
+        ".",
+        "Solution"
       ]);
     } else if (language === "c") {
-      await compileC(tempDir, code);
       return spawn("docker", [
         "run",
         "-i",
         "--rm",
+        "--memory",
+        "100m",
+        "--memory-swap",
+        "100m",
+        "--cpus",
+        "1",
         "-v",
         `${tempDir}:/usr/src/app`,
         "-w",
         "/usr/src/app",
         "gcc:latest",
-        "./solution",
-        ...testCase,
+        "timeout",
+        "30s",
+        "./solution"
       ]);
     } else if (language === "cpp") {
-      await compileCpp(tempDir, code);
       return spawn("docker", [
         "run",
         "-i",
         "--rm",
+        "--memory",
+        "100m",
+        "--memory-swap",
+        "100m",
+        "--cpus",
+        "1",
         "-v",
         `${tempDir}:/usr/src/app`,
         "-w",
         "/usr/src/app",
         "gcc:latest",
-        "./solution",
-        ...testCase,
+        "timeout",
+        "30s",
+        "./solution"
       ]);
-    } else {
-      throw new Error("Unsupported language");
     }
+    throw new Error("Unsupported language");
   } catch (error) {
     throw new Error(error);
   }
 }
-
-export { compileJava, compileC, compileCpp, startCompilation };
+const checkThreadSleep = (code: string): boolean => {
+  const threadSleepPattern = /Thread\.sleep\((\d+)\)/g;
+  let match;
+  while ((match = threadSleepPattern.exec(code)) !== null) {
+    const sleepTime = parseInt(match[1], 10);
+    if (sleepTime >= 1000) {
+      return false;
+    }
+  }
+  return true;
+};
+export { compileJava, compileC, compileCpp, startProcess, getProcessOutput,checkThreadSleep };

@@ -14,11 +14,11 @@ export class Testcase {
 
   @Prop({
     type: SchemaTypes.Mixed,
-    required: true,
+    required: false,
   })
   output: any;
 
-  @Prop({ type: String || Number || Object, required: false })
+  @Prop({ type: SchemaTypes.Mixed, required: true })
   outputExpected?: any; // Explicitly define a type here (string, number, etc.).
 
   @Prop({

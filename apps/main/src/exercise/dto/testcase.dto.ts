@@ -6,7 +6,7 @@ export class TestcaseDto {
   input: [Record<string, any>]; // Use `Record` for dynamic key-value pairs
 
   @IsNotEmpty()
-  output: any; // Output can be any type
+  outputExpected: any; // Output can be any type
 
   @IsBoolean()
   hidden: boolean;
