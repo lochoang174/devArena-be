@@ -64,7 +64,7 @@ export class CompileService {
               const [expectedOutput, userOutput] = await Promise.all([
                 this.getTestCaseOutput(solutionProcess,false,observer,i),
                 this.getTestCaseOutput(userProcess,true,observer,i),
-              ]);
+              ]); 
 
               const isCorrect = userOutput.trim() === expectedOutput.trim();
 
@@ -183,48 +183,42 @@ export class CompileService {
     return new Observable<CompileResult>((observer) => {
       (async () => {
         try {
-          const tempDir = path.join(__dirname, "../temp");
+          const tempDir = path.join(__dirname, "../temp", uuidv4());
           await fs.mkdir(tempDir, { recursive: true });
-
+  
+          // 2. Compile user code once
+          await this.compileCode(data.code, data.language, tempDir);
+  
           let correctCount = 0;
           let totalRuntime = 0;
-          let totalCPUUsage = 0;
-
-          // Compile user code once
-          await this.compileCode(data.code, data.language, tempDir);
-          const process = await startProcess(data.language, tempDir);
-
+  
           for (let i = 0; i < data.testcases.length; i++) {
             try {
-              const startCpuUsage = process.cpuUsage();
-              const startTime = process.hrtime();
-
-              // Chỉ gửi input, không gửi marker
+              const userProcess = await startProcess(data.language, tempDir);
+  
+              const startTime = Date.now(); // Bắt đầu đo thời gian
               const testInput = data.testcases[i].inputs.join(" ") + "\n";
-              process.stdin.write(testInput);
-              const userOutput = await this.getTestCaseOutput(process);
-
-              const endCpuUsage = process.cpuUsage(startCpuUsage);
-              const endTime = process.hrtime(startTime);
-
-              const runtime = endTime[0] * 1000 + endTime[1] / 1e6;
+              userProcess.stdin.write(testInput);
+  
+              const userOutput = await this.getTestCaseOutput(userProcess, false, observer, i);
+              const endTime = Date.now(); // Kết thúc đo thời gian
+  
+              const runtime = endTime - startTime; // Tính thời gian chạy (ms)
               totalRuntime += runtime;
-
-              const cpuTime = (endCpuUsage.user + endCpuUsage.system) / 1000;
-              totalCPUUsage += cpuTime;
-
-              const isCorrect =
-                userOutput.trim() === data.testcases[i].output.trim();
-
+  
+              const isCorrect = userOutput.trim() === data.testcases[i].output.trim();
+  
               const status: CompileStatus = {
                 testCaseIndex: i,
                 isCorrect,
                 output: userOutput.trim(),
                 outputExpect: data.testcases[i].output.trim(),
+
               };
-
+  
               observer.next({ status });
-
+              userProcess.kill();
+  
               if (isCorrect) {
                 correctCount++;
               }
@@ -233,37 +227,36 @@ export class CompileService {
                 new RpcException({
                   code: 13,
                   message: `${error.message}`,
-                }),
+                })
               );
               return;
             }
           }
-
-          process.kill();
-
+  
           const totalTestCases = data.testcases.length;
           const score = (correctCount / totalTestCases) * 100;
           const result = `${correctCount}/${totalTestCases}`;
-
+  
           observer.next({
             finalResult: {
               result,
               score,
               status: score === 100 ? 200 : 400,
-              totalRuntime: totalRuntime,
+              totalRuntime: totalRuntime, // Tổng thời gian chạy
             },
           });
-
+  
           observer.complete();
         } catch (error) {
           observer.error(
             new RpcException({
               code: 13,
               message: `${error.message}`,
-            }),
+            })
           );
         }
       })();
     });
   }
+  
 }

@@ -161,6 +161,11 @@ export class SocketGateway implements OnGatewayConnection, OnModuleInit {
       if (!userId) {
         throw new Error("User information is missing");
       }
+      const userExecutionChecking = this.userExecutionMap.get(userId);
+      if(userExecutionChecking.testcases.length>0){
+        client.emit("error", { message: "User run code too many times. Please try again in a few seconds" });
+        return 
+      }
       const compileRequest = {
         code: data.code,
         codeSolution: await this.getSolutionCode(data.exerciseId),

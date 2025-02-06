@@ -12,11 +12,11 @@ export class Testcase {
   })
   input: [any];
 
-  // @Prop({
-  //   type: SchemaTypes.Mixed,
-  //   required: true,
-  // })
-  // output: any;
+  @Prop({
+    type: SchemaTypes.Mixed,
+    required: false,
+  })
+  output: any;
 
   @Prop({ type: SchemaTypes.Mixed, required: true })
   outputExpected?: any; // Explicitly define a type here (string, number, etc.).
