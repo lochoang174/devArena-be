@@ -20,6 +20,8 @@ import { join } from "path";
 import { unlink } from "fs/promises";
 import { UpdateProfileDto } from "./dto/updateProfile";
 import { UpdatePasswordDto } from "./dto/update-password.dto";
+import { ResendDTO } from "./dto/resend.dto";
+import { ResetPassworDto } from "./dto/reset-password.dto";
 
 @Injectable()
 export class AuthService {
@@ -68,9 +70,9 @@ export class AuthService {
     }
 
     // Remove password from response
-    const { role, _id, username, email, providers,avatar } = user.toObject();
+    const { role, _id, username, email, providers,avatar, isCreatePassword } = user.toObject();
     const url_profile= this.configService.get("URL_PROFILE")
-    return { role, id: _id, username, email, providers, avatar:`${url_profile}/${avatar}` };
+    return { role, id: _id, username, email, providers, avatar:`${url_profile}/${avatar}`,isCreatePassword };
   }
 
   async signup(signupDto: SignupDTO) {
@@ -133,7 +135,7 @@ export class AuthService {
         id: user.id,
         role: user.role,
         username: user.username,
-        email: user.email,
+        email: user.email, 
       },
       {
         secret: this.configService.get<string>("JWT_ACCESS_TOKEN_SECRET"),
@@ -320,16 +322,13 @@ export class AuthService {
   }
   async updatePassword(userId: string, updateDto: UpdatePasswordDto) {
     const user = await this.usersService.findOne(userId);
+    
     if (!user) {
       throw new BadRequestException("User not found.");
     }
 
-    if (updateDto.isCreatePassword) {
-      // Nếu cần kiểm tra mật khẩu cũ
-      // const isOldPasswordValid = await this.hashService.compareHash(
-      //   updateDto.oldPassword,
-      //   user.password
-      // );
+    if (user.isCreatePassword) {
+   
       const isOldPasswordValid = await compare(updateDto.oldPassword, user.password);
 
       if (!isOldPasswordValid) {
@@ -338,9 +337,59 @@ export class AuthService {
     }
 
     // Hash mật khẩu mới và cập nhật
-    const newHashedPassword = await  await bcrypt.hash(updateDto.newPassword, 10);
-    await this.usersService.update(userId, {... user,password:  newHashedPassword, isCreatePassword:true});
-
+    const newHashedPassword = await bcrypt.hash(updateDto.newPassword, 10);
+    const i=await this.usersService.update(userId, {password:  newHashedPassword, isCreatePassword:true});
     return { message: "Password updated successfully." };
+  }
+  async forgotPassword(email: string) {
+    try {
+      // Check if the user exists
+      const user = await this.usersService.findByEmail(email);
+      if (!user) {
+        throw new CustomException("User not found", 404);
+      }
+  
+      // Generate a password reset token
+      const resetToken = this.jwtService.sign(
+        { id: user._id },
+        {
+          secret: this.configService.get<string>("JWT_RESET_PASSWORD_SECRET"),
+          expiresIn: "15m", // Token expires in 15 minutes
+        }
+      );
+  
+      // Save the reset token in the database
+      await this.usersService.update(user._id.toString(), {resetPasswordToken:resetToken});
+  
+      // Generate password reset URL
+      const resetUrl = `${this.configService.get<string>("FRONTEND_URL")}/reset-password?token=${resetToken}`;
+  
+      // Email content
+      const emailContent = `
+        <div>
+          <h1>Reset Your Password</h1>
+          <p>Click the link below to reset your password:</p>
+          <a href="${resetUrl}">Reset Password</a>
+          <p>This link will expire in 15 minutes.</p>
+        </div>
+      `;
+  
+      // Send reset email
+      await this.emailService.sendMail(email, "Password Reset Request", "", emailContent);
+  
+      return { message: "Password reset link sent to your email" };
+    } catch (error) {
+      throw error;
+    }
+  }
+  async resetPassword( reset: ResetPassworDto){
+    const payload = this.jwtService.verify(reset.token, {
+      secret: this.configService.get<string>("JWT_RESET_PASSWORD_SECRET"),
+    });
+    const user = await this.usersService.findOne(payload.id)
+    const newHashedPassword = await bcrypt.hash(reset.newPassword, 10);
+    await this.usersService.update(user.id, {password:  newHashedPassword, isCreatePassword:true});
+    return 
+
   }
 }

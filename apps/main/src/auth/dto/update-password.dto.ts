@@ -1,8 +1,8 @@
 import { IsBoolean, IsNotEmpty, IsOptional, IsString } from "class-validator";
 
 export class UpdatePasswordDto {
-  @IsBoolean()
-  isCreatePassword: boolean;
+  // @IsBoolean()
+  // isCreatePassword: boolean;
 
   @IsOptional()
   @IsString()

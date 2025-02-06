@@ -57,10 +57,17 @@ export class UserService {
     return user;
   }
 
-  async update(id: string, updateUser:User ) {
-    const user =await this.userModel.findByIdAndUpdate(id,{...updateUser},{new:true});
+  async update(id: string, updateUser: any) {
+    const user = await this.userModel.findByIdAndUpdate(id, { $set: updateUser }, { new: true, runValidators: true }).lean();
+    
+    if (!user) {
+      return null
+    }
+
+    console.log(user);
     return user;
-  }
+}
+
   async verifyUser(userId: string) {
     try {
       const user = await this.userModel
