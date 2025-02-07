@@ -44,7 +44,8 @@ export class User {
   @Prop()
   avatar?: string;
 
-
+  @Prop({ required: false })
+  resetPasswordToken?: string;
 
   @Prop({
     type: String

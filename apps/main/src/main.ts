@@ -35,7 +35,7 @@ async function bootstrap() {
   app.useStaticAssets(join(__dirname, "../../../apps/main/", "uploads"), {
     prefix: "/uploads",
   });
-
+  console.log(configService.get<number>("MONGODB_URI"))
   const port = configService.get<number>("PORT");
 
   await app.listen(port);
