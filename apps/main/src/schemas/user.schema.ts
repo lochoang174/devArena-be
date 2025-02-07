@@ -15,13 +15,14 @@ export enum RoleEnum {
   CLIENT = 'client',
 }
 
-export type UserDocument = User ;
+export type UserDocument = User & Document ;
 
 @Schema({
   timestamps: true, // Adds createdAt and updatedAt fields
 
 })
 export class User {
+  _id?: string
   @Prop({ required: true })
   username: string;
 

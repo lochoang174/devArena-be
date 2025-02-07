@@ -18,7 +18,7 @@ export class LocalStrategy extends PassportStrategy(Strategy) {
 
 
   async validate(req: any, email: string, password: string): Promise<any> {
-    console.log(req.body)
+    // console.log(req.body)
     const provider = req.body.provider; // Lấy credential từ body của request
    
     const user = await this.authService.validate(email, password, provider);

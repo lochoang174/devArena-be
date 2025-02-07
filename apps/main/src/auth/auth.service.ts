@@ -36,11 +36,17 @@ export class AuthService {
     password: string,
     provider: ProviderEnum,
   ): Promise<any> {
-    const user = await this.usersService.findByEmail(emailValidate);
-    console.log(user)
+    let user = await this.usersService.findByEmail(emailValidate);
 
     if (!user) {
-      throw new UnauthorizedException("Invalid credentials");
+      if(provider!==ProviderEnum.CREDENTIALS){
+        const username = emailValidate.split("@")[0]
+        user =await this.signup({email:emailValidate,password:"",provider:provider,username,})
+      }
+      else{
+        throw new UnauthorizedException("Invalid credentials");
+
+      }
     }
     if (provider === ProviderEnum.CREDENTIALS) {
       // Check if user has set password
@@ -70,10 +76,17 @@ export class AuthService {
     }
 
     // Remove password from response
-    const { role, _id, username, email, providers,avatar, isCreatePassword } = user.toObject();
+    const { role, _id, username, email, providers,avatar, isCreatePassword } = user;
     const url_profile= this.configService.get("URL_PROFILE")
-    return { role, id: _id, username, email, providers, avatar:`${url_profile}/${avatar}`,isCreatePassword };
-  }
+    return { 
+      role, 
+      id: _id, 
+      username, 
+      email, 
+      providers,
+      ...(avatar && { avatar: `${url_profile}/${avatar}` }),
+      isCreatePassword 
+  };  }
 
   async signup(signupDto: SignupDTO) {
     const { email, password, provider, username } = signupDto;
@@ -92,7 +105,7 @@ export class AuthService {
         }
         // Add new provider to existing user
         existingUser.providers.push(provider);
-        await existingUser.save();
+        await this.usersService.update(existingUser._id,existingUser);
         // await this.usersService.update(existingUser._id.toString(), {
         //   providers: existingUser.providers,
         // });
@@ -115,7 +128,7 @@ export class AuthService {
     const newUser = await this.usersService.create({
       username,
       email,
-      providers: provider !== ProviderEnum.CREDENTIALS ? [ProviderEnum.DISCORD,ProviderEnum.GITHUB,ProviderEnum.GOOGLE] : [],
+      providers:  [ProviderEnum.DISCORD,ProviderEnum.GITHUB,ProviderEnum.GOOGLE],
       isEmailVerified: provider !== ProviderEnum.CREDENTIALS, // OAuth users are considered verified
       role: RoleEnum.CLIENT,
       password: hashedPassword,
@@ -206,7 +219,7 @@ export class AuthService {
       otpCodeExpired.setMinutes(otpCodeExpired.getMinutes() + 5);
 
       // Cập nhật user với mã OTP mới và thời gian hết hạn
-      // await this.usersService.updateUserOtp(user._id, otpCode, otpCodeExpired);
+      await this.usersService.updateUserOtp(user._id, otpCode, otpCodeExpired);
 
       // Gửi email OTP
       const emailContent = `
@@ -328,7 +341,7 @@ export class AuthService {
     }
 
     if (user.isCreatePassword) {
-   
+    
       const isOldPasswordValid = await compare(updateDto.oldPassword, user.password);
 
       if (!isOldPasswordValid) {

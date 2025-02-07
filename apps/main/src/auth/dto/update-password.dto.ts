@@ -6,7 +6,6 @@ export class UpdatePasswordDto {
 
   @IsOptional()
   @IsString()
-  @IsNotEmpty({ message: "Old password is required when creating a new password." })
   oldPassword?: string;
 
   @IsString()

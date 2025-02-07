@@ -28,8 +28,10 @@ export class CompileService {
   compile(data: CompileRequest): Observable<CompileResult> {
     return new Observable<CompileResult>((observer) => {
       (async () => {
+        const tempDir = path.join(__dirname, "../temp", uuidv4());
+        const solutionDir = path.join(__dirname, "../solution", uuidv4());
         try {
-          if(!checkThreadSleep(data.code)){
+          if (!checkThreadSleep(data.code)) {
             observer.error(
               new RpcException({
                 code: 14,
@@ -37,11 +39,12 @@ export class CompileService {
               }),
             );
           }
-          const tempDir = path.join(__dirname, "../temp", uuidv4());
+
           await fs.mkdir(tempDir, { recursive: true });
+          await fs.mkdir(solutionDir, { recursive: true });
 
           // 1. Compile solution code once
-          await this.compileCode(data.codeSolution, data.language, tempDir);
+          await this.compileCode(data.codeSolution, data.language, solutionDir);
 
           // 2. Compile user code once
           await this.compileCode(data.code, data.language, tempDir);
@@ -49,12 +52,15 @@ export class CompileService {
           // 3. Run each test case
           for (let i = 0; i < data.testcases.length; i++) {
             try {
-              const solutionProcess = await startProcess(data.language, tempDir);
+              const solutionProcess = await startProcess(
+                data.language,
+                solutionDir,
+              );
 
               const userProcess = await startProcess(data.language, tempDir);
 
               // Chỉ gửi input, không gửi marker
-              const testInput = data.testcases[i].inputs.join(" ") + "\n";
+              const testInput = data.testcases[i].inputs.join("\n") + "\n";
 
               // Gửi input đồng thời cho cả 2 process
               solutionProcess.stdin.write(testInput);
@@ -62,9 +68,9 @@ export class CompileService {
 
               // Chạy song song việc lấy output
               const [expectedOutput, userOutput] = await Promise.all([
-                this.getTestCaseOutput(solutionProcess,false,observer,i),
-                this.getTestCaseOutput(userProcess,true,observer,i),
-              ]); 
+                this.getTestCaseOutput(solutionProcess, false, observer, i),
+                this.getTestCaseOutput(userProcess, true, observer, i),
+              ]);
 
               const isCorrect = userOutput.trim() === expectedOutput.trim();
 
@@ -74,11 +80,11 @@ export class CompileService {
                 output: userOutput.trim(),
                 outputExpect: expectedOutput.trim(),
               };
-      // Clean up processes
-      solutionProcess.kill();
-      userProcess.kill();
+              // Clean up processes
+              solutionProcess.kill();
+              userProcess.kill();
               observer.next({
-                status:status
+                status: status,
               });
             } catch (error) {
               observer.error(
@@ -91,8 +97,6 @@ export class CompileService {
             }
           }
 
-    
-
           observer.complete();
         } catch (error) {
           observer.error(
@@ -101,6 +105,9 @@ export class CompileService {
               message: `${error.message}`,
             }),
           );
+        } finally {
+          await fs.rm(tempDir, { recursive: true, force: true });
+          await fs.rm(solutionDir, { recursive: true, force: true });
         }
       })();
     });
@@ -128,9 +135,9 @@ export class CompileService {
 
   private async getTestCaseOutput(
     process: ChildProcessWithoutNullStreams,
-    isUser:boolean,
-    subscriber:Subscriber<CompileResult>,
-    testCaseIndex:number
+    isUser: boolean,
+    subscriber: Subscriber<CompileResult>,
+    testCaseIndex: number,
   ): Promise<string> {
     return new Promise<string>((resolve, reject) => {
       let output = "";
@@ -147,14 +154,14 @@ export class CompileService {
 
       const outputHandler = (data: Buffer) => {
         output += data.toString();
-        if(isUser){
+        if (isUser) {
           // console.log("output", data.toString());
           subscriber.next({
-              LogRunCode:{
-                chunk: data.toString(),
-                testCaseIndex:testCaseIndex
-              }
-          })
+            LogRunCode: {
+              chunk: data.toString(),
+              testCaseIndex: testCaseIndex,
+            },
+          });
         }
         // Reset timer mỗi khi nhận được data mới
         if (timer) {
@@ -182,43 +189,50 @@ export class CompileService {
   submit(data: CompileRequest): Observable<CompileResult> {
     return new Observable<CompileResult>((observer) => {
       (async () => {
+        const tempDir = path.join(__dirname, "../temp", uuidv4());
+
         try {
-          const tempDir = path.join(__dirname, "../temp", uuidv4());
+          // const tempDir = path.join(__dirname, "../temp", uuidv4());
           await fs.mkdir(tempDir, { recursive: true });
-  
+
           // 2. Compile user code once
           await this.compileCode(data.code, data.language, tempDir);
-  
+
           let correctCount = 0;
           let totalRuntime = 0;
-  
+
           for (let i = 0; i < data.testcases.length; i++) {
             try {
               const userProcess = await startProcess(data.language, tempDir);
-  
+
               const startTime = Date.now(); // Bắt đầu đo thời gian
-              const testInput = data.testcases[i].inputs.join(" ") + "\n";
+              const testInput = data.testcases[i].inputs.join("\n") + "\n";
               userProcess.stdin.write(testInput);
-  
-              const userOutput = await this.getTestCaseOutput(userProcess, false, observer, i);
+
+              const userOutput = await this.getTestCaseOutput(
+                userProcess,
+                false,
+                observer,
+                i,
+              );
               const endTime = Date.now(); // Kết thúc đo thời gian
-  
+
               const runtime = endTime - startTime; // Tính thời gian chạy (ms)
               totalRuntime += runtime;
-  
-              const isCorrect = userOutput.trim() === data.testcases[i].output.trim();
-  
+
+              const isCorrect =
+                userOutput.trim() === data.testcases[i].output.trim();
+
               const status: CompileStatus = {
                 testCaseIndex: i,
                 isCorrect,
                 output: userOutput.trim(),
                 outputExpect: data.testcases[i].output.trim(),
-
               };
-  
+
               observer.next({ status });
               userProcess.kill();
-  
+
               if (isCorrect) {
                 correctCount++;
               }
@@ -227,16 +241,16 @@ export class CompileService {
                 new RpcException({
                   code: 13,
                   message: `${error.message}`,
-                })
+                }),
               );
               return;
             }
           }
-  
+
           const totalTestCases = data.testcases.length;
           const score = (correctCount / totalTestCases) * 100;
           const result = `${correctCount}/${totalTestCases}`;
-  
+
           observer.next({
             finalResult: {
               result,
@@ -245,18 +259,20 @@ export class CompileService {
               totalRuntime: totalRuntime, // Tổng thời gian chạy
             },
           });
-  
+
           observer.complete();
         } catch (error) {
           observer.error(
             new RpcException({
               code: 13,
               message: `${error.message}`,
-            })
+            }),
           );
+        }
+        finally{
+          await fs.rm(tempDir, { recursive: true, force: true });
         }
       })();
     });
   }
-  
 }
