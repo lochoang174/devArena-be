@@ -37,11 +37,11 @@ export class AuthService {
     provider: ProviderEnum,
   ): Promise<any> {
     const user = await this.usersService.findByEmail(emailValidate);
+    console.log(user)
 
     if (!user) {
       throw new UnauthorizedException("Invalid credentials");
     }
-
     if (provider === ProviderEnum.CREDENTIALS) {
       // Check if user has set password
       if (!user.isCreatePassword || !user.password) {
@@ -115,7 +115,7 @@ export class AuthService {
     const newUser = await this.usersService.create({
       username,
       email,
-      providers: provider !== ProviderEnum.CREDENTIALS ? [provider] : [],
+      providers: provider !== ProviderEnum.CREDENTIALS ? [ProviderEnum.DISCORD,ProviderEnum.GITHUB,ProviderEnum.GOOGLE] : [],
       isEmailVerified: provider !== ProviderEnum.CREDENTIALS, // OAuth users are considered verified
       role: RoleEnum.CLIENT,
       password: hashedPassword,
@@ -311,7 +311,7 @@ export class AuthService {
       }
     }
 
-    const updatedUser = await this.usersService.update(userId, {...oldUser,...updateData});
+    const updatedUser = await this.usersService.update(userId, {...updateData});
     const url_profile= this.configService.get("URL_PROFILE")
 
     return {
@@ -362,7 +362,7 @@ export class AuthService {
       await this.usersService.update(user._id.toString(), {resetPasswordToken:resetToken});
   
       // Generate password reset URL
-      const resetUrl = `${this.configService.get<string>("FRONTEND_URL")}/reset-password?token=${resetToken}`;
+      const resetUrl = `${this.configService.get<string>("FRONTEND_URL")}/auth/reset-password?token=${resetToken}`;
   
       // Email content
       const emailContent = `
