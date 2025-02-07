@@ -22,9 +22,13 @@ export class ExerciseService {
     return this.exerciseModel.find({ courseId });
   }
 
+  async findAllByType(type: string) {
+    return this.exerciseModel.find({ type });
+  }
+
   async create(createExerciseDto: CreateExerciseDto): Promise<Exercise> {
     const newExercise = new this.exerciseModel({});
-    
+
     return newExercise.save();
   }
   async findTestcaseById(exerciseId: string): Promise<Testcase[]> {
@@ -36,8 +40,8 @@ export class ExerciseService {
       // Trả về mảng rỗng nếu không tìm thấy hoặc không có testcases
       return [];
     }
-  
-  
+
+
     return exercise.testcases;
   }
   // /**

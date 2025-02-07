@@ -61,7 +61,7 @@ export class CompileService {
 
               // Chỉ gửi input, không gửi marker
               const testInput = data.testcases[i].inputs.join("\n") + "\n";
-
+              console.log("testInput", testInput);
               // Gửi input đồng thời cho cả 2 process
               solutionProcess.stdin.write(testInput);
               userProcess.stdin.write(testInput);
@@ -200,7 +200,6 @@ export class CompileService {
 
           let correctCount = 0;
           let totalRuntime = 0;
-
           for (let i = 0; i < data.testcases.length; i++) {
             try {
               const userProcess = await startProcess(data.language, tempDir);
@@ -268,8 +267,7 @@ export class CompileService {
               message: `${error.message}`,
             }),
           );
-        }
-        finally{
+        } finally {
           await fs.rm(tempDir, { recursive: true, force: true });
         }
       })();

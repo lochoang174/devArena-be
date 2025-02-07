@@ -27,6 +27,7 @@ import { Testcase } from "../schemas/testcase.schema";
 import { ExerciseStatusService } from "../exercise-status/exercise-status.service";
 import { CreateExerciseStatusDto } from "../exercise-status/dto/create-exercise-status.dto";
 import e from "express";
+import { AlgorithmService } from "../algorithm/algorithm.service";
 
 @WebSocketGateway({
   cors: {
@@ -42,15 +43,16 @@ export class SocketGateway implements OnGatewayConnection, OnModuleInit {
     string,
     {
       sockets: Set<string>;
-      testcases: { exerciseId: string; testcaseIndex: number; value: any; outputExpected?: any, isCorrect?:boolean }[];
+      testcases: { exerciseId: string; testcaseIndex: number; value: any; outputExpected?: any, isCorrect?: boolean }[];
     }
   >();
   constructor(
     private studyService: StudyService,
+    private algorithmService: AlgorithmService,
     private exerciseService: ExerciseService,
     private exerciseStatusService: ExerciseStatusService,
     @Inject(COMPILE_SERVICE_NAME) private client: ClientGrpc,
-  ) {}
+  ) { }
   onModuleInit() {
     this.compileService =
       this.client.getService<CompileServiceClient>(COMPILE_SERVICE_NAME);
@@ -61,8 +63,10 @@ export class SocketGateway implements OnGatewayConnection, OnModuleInit {
   }
 
   // Hàm lấy mã giải pháp
-  async getSolutionCode(exerciseId: string): Promise<string> {
+  async getSolutionCode(exerciseId: string, isAlgorithm?: boolean, language?: string): Promise<string> {
     try {
+      if (isAlgorithm && language)
+        return await this.algorithmService.findSolutionCode(exerciseId, language);
       return await this.studyService.findSolutionCode(exerciseId);
     } catch (error) {
       // client.emit('error', `Không tìm thấy solution code: ${error.message}`);
@@ -108,7 +112,7 @@ export class SocketGateway implements OnGatewayConnection, OnModuleInit {
     userExecution.sockets.add(client.id);
 
     // Tìm testcase có exerciseId khớp và index cao nhất
-   
+
     console.log(this.userExecutionMap)
     // Gửi lại testcase mới nhất nếu có
     if (userExecution.testcases) {
@@ -133,7 +137,7 @@ export class SocketGateway implements OnGatewayConnection, OnModuleInit {
     //   }
     // });
   }
-  
+
   // This is an example of handling a custom message from a client
   @SubscribeMessage("sendMessage")
   handleMessage(
@@ -153,6 +157,7 @@ export class SocketGateway implements OnGatewayConnection, OnModuleInit {
       exerciseId: string;
       language: string;
       userId: string;
+      isAlgorithm?: boolean;
     },
     @ConnectedSocket() client: Socket,
   ) {
@@ -162,14 +167,16 @@ export class SocketGateway implements OnGatewayConnection, OnModuleInit {
         throw new Error("User information is missing");
       }
       const userExecutionChecking = this.userExecutionMap.get(userId);
-      if(userExecutionChecking.testcases.length>0){
+      if (userExecutionChecking.testcases.length > 0) {
         client.emit("error", { message: "User run code too many times. Please try again in a few seconds" });
-        return 
+        return
       }
+      console.log("data", data);
       const compileRequest = {
         code: data.code,
-        codeSolution: await this.getSolutionCode(data.exerciseId),
+        codeSolution: await this.getSolutionCode(data.exerciseId, data.isAlgorithm, data.language),
         testcases: data.testCases.map((inputs) => ({ inputs })),
+        // testcases: [{ inputs: ['[2,7,11,15]', '9'] }],
         language: data.language,
       };
 
@@ -202,7 +209,7 @@ export class SocketGateway implements OnGatewayConnection, OnModuleInit {
               testcases: [],
             });
           }
-  
+
           const userExecution = this.userExecutionMap.get(userId);
           // console.log(userExecution)
           if (res.LogRunCode) {
@@ -211,7 +218,7 @@ export class SocketGateway implements OnGatewayConnection, OnModuleInit {
             const existingTestcaseIndex = userExecution.testcases.findIndex(
               tc => tc.exerciseId === data.exerciseId && tc.testcaseIndex === index
             );
-  
+
             if (existingTestcaseIndex === -1) {
               // Nếu chưa có, thêm mới
               userExecution.testcases.push({
@@ -223,11 +230,11 @@ export class SocketGateway implements OnGatewayConnection, OnModuleInit {
               // Nếu đã có, update value
               userExecution.testcases[existingTestcaseIndex].value += res.LogRunCode.chunk;
             }
-  
+
             // Đảm bảo array được sắp xếp theo testcaseIndex
             userExecution.testcases.sort((a, b) => a.testcaseIndex - b.testcaseIndex);
           }
-          if(res.status){
+          if (res.status) {
             userExecution.testcases[res.status.testCaseIndex].isCorrect = res.status.isCorrect;
             userExecution.testcases[res.status.testCaseIndex].outputExpected = res.status.outputExpect;
 
@@ -236,7 +243,7 @@ export class SocketGateway implements OnGatewayConnection, OnModuleInit {
           // userExecution.sockets.forEach((socketId) => {
           //   const socket = this.server.sockets.sockets.get(socketId);
           //   if (socket) {
-             
+
           //     if (res.status) {
           //       socket.emit("output", res.status);
           //     } else if (res.LogRunCode) {
@@ -260,7 +267,7 @@ export class SocketGateway implements OnGatewayConnection, OnModuleInit {
           if (userExecution) {
             // Lọc bỏ testcases thuộc exerciseId hiện tại
             userExecution.testcases = userExecution.testcases.filter(tc => tc.exerciseId !== data.exerciseId);
-        
+
             // Cập nhật lại userExecutionMap
             this.userExecutionMap.set(userId, userExecution);
           }
@@ -302,7 +309,7 @@ export class SocketGateway implements OnGatewayConnection, OnModuleInit {
         inputs: temp,
       };
     });
-    const codeSolution = await this.getSolutionCode(data.exerciseId);
+    const codeSolution = "";
     const stream = this.compileService.runSubmit({
       testcases: payload,
       code: data.code,
