@@ -8,6 +8,8 @@ import { ExerciseService } from "../exercise/exercise.service";
 import { stat } from "fs";
 import { Test } from "@nestjs/testing";
 import { TestCase } from "@app/common";
+import { AlgorithmDocument } from "../schemas/algorithm.schema";
+import { AlgorithmService } from "../algorithm/algorithm.service";
 
 @Injectable()
 export class ExerciseStatusService {
@@ -68,6 +70,15 @@ export class ExerciseStatusService {
     const exercises = await this.exerciseService.findAllByCourseId(courseId);
     const exerciseIds = exercises.map((exercise) => exercise._id);
 
+    return await this.exerciseStatusModel
+      .find({ userId, exerciseId: { $in: exerciseIds } })
+      .select("_id exerciseId status")
+      .exec();
+  }
+
+  async findAllAlgorithmByUser(userId: string) {
+    const exercises = await this.exerciseService.findAllByType("AlgorithmModel");
+    const exerciseIds = exercises.map((exercise) => exercise._id);
     return await this.exerciseStatusModel
       .find({ userId, exerciseId: { $in: exerciseIds } })
       .select("_id exerciseId status")

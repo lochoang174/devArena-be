@@ -3,12 +3,15 @@ import { InjectModel } from "@nestjs/mongoose";
 import { Model, Types } from "mongoose";
 import { Algorithm, AlgorithmDocument } from "../schemas/algorithm.schema";
 import { CreateAlgorithmDto } from "./dto/createAlgorithm.dto";
+import { ExerciseStatusService } from "../exercise-status/exercise-status.service";
 @Injectable()
 export class AlgorithmService {
   constructor(
     @InjectModel(Algorithm.name)
     private algorithmModel: Model<AlgorithmDocument>,
-  ) {}
+    private readonly exerciseStatusService: ExerciseStatusService,
+
+  ) { }
 
   async create(createAlgorithmDto: CreateAlgorithmDto): Promise<Algorithm> {
     const algorithm = new this.algorithmModel({
@@ -47,4 +50,19 @@ export class AlgorithmService {
     }
     return algorithm;
   }
+
+
+  async findExercises(): Promise<Algorithm[]> {
+    return this.algorithmModel.find().select('_id title difficulty tags score type').exec();
+  }
+
+  async findAllByUser(userId: string): Promise<{
+    exercisesStatus: any[];
+    exercises: Algorithm[];
+  }> {
+    const exercises = await this.findExercises();
+    const exercisesStatus = await this.exerciseStatusService.findAllAlgorithmByUser(userId);
+    return { exercisesStatus, exercises };
+  }
 }
+

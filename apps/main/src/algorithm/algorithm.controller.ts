@@ -1,4 +1,4 @@
-import { Body, Controller, Delete, Get, Param, Post, Put, UseGuards } from '@nestjs/common';
+import { Body, Controller, Delete, Get, HttpException, HttpStatus, Param, Post, Put, UseGuards } from '@nestjs/common';
 import { AlgorithmService } from './algorithm.service';
 import { CreateAlgorithmDto } from './dto/createAlgorithm.dto';
 import { RolesGuard } from '../auth/guards/role.guard';
@@ -6,7 +6,7 @@ import { Public, Roles } from '@app/common';
 
 @Controller('algorithm')
 export class AlgorithmController {
-  constructor(private readonly algorithmService: AlgorithmService) {}
+  constructor(private readonly algorithmService: AlgorithmService) { }
 
   @Post()
   @UseGuards(RolesGuard)
@@ -42,5 +42,17 @@ export class AlgorithmController {
   @Get(":id")
   findById(@Param("id") id: string) {
     return this.algorithmService.findById(id);
+  }
+
+  @Get("user/:userId")
+  @Roles(["admin", "client"])
+  async findAllByUser(
+    @Param("userId") userId: string
+  ) {
+    try {
+      return await this.algorithmService.findAllByUser(userId);
+    } catch (error) {
+      throw new HttpException(error.message, HttpStatus.NOT_FOUND); // Or use BAD_REQUEST based on the error type
+    }
   }
 }
