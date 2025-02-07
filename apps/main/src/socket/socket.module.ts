@@ -6,12 +6,14 @@ import { ClientsModule, Transport } from "@nestjs/microservices";
 import { COMPILE_SERVICE_NAME } from "@app/common";
 import { join } from "path";
 import { ExerciseStatusModule } from "../exercise-status/exercise-status.module";
+import { AlgorithmModule } from "../algorithm/algorithm.module";
 
 @Module({
   providers: [SocketGateway, SocketService],
   imports: [
     StudyModule,
     ExerciseStatusModule,
+    AlgorithmModule,
     ClientsModule.register([
       {
         name: COMPILE_SERVICE_NAME,
@@ -24,4 +26,4 @@ import { ExerciseStatusModule } from "../exercise-status/exercise-status.module"
     ]),
   ],
 })
-export class SocketModule {}
+export class SocketModule { }
