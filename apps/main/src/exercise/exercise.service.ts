@@ -12,6 +12,7 @@ import { Testcase } from "../schemas/testcase.schema";
 
 @Injectable()
 export class ExerciseService {
+
   constructor(
     @InjectModel("Exercise") private exerciseModel: Model<ExerciseDocument>,
     private readonly courseService: CourseService,
@@ -44,9 +45,54 @@ export class ExerciseService {
 
     return exercise.testcases;
   }
-  // /**
-  //  * Find all exercises
-  //  */
+
+  async countEachDifficulty(exerciseIds: Exercise[]): Promise<{ easy: number, medium: number, hard: number }> {
+    // Fetch exercises by their IDs
+    const exercises = await this.exerciseModel.find({ _id: { $in: exerciseIds } }).exec();
+
+    // Initialize counters for each difficulty
+    const difficultyCounts = {
+      easy: 0,
+      medium: 0,
+      hard: 0,
+    };
+
+    // Iterate through each exercise and increment the corresponding difficulty count
+    exercises.forEach(exercise => {
+      switch (exercise.difficulty) {
+        case 'easy':
+          difficultyCounts.easy++;
+          break;
+        case 'medium':
+          difficultyCounts.medium++;
+          break;
+        case 'hard':
+          difficultyCounts.hard++;
+          break;
+      }
+    });
+
+    return difficultyCounts;
+  }
+
+  // count each tag
+  async countEachTag(exerciseIds: Exercise[]): Promise<{ [key: string]: number }> {
+    // Fetch exercises by their IDs
+    const exercises = await this.exerciseModel.find({ _id: { $in: exerciseIds } }).exec();
+
+    // Initialize a tag counter object
+    const tagCounts = {};
+
+    // Iterate through each exercise and increment the corresponding tag count
+    exercises.forEach(exercise => {
+      exercise.tags.forEach(tag => {
+        tagCounts[tag] = tagCounts[tag] ? tagCounts[tag] + 1 : 1;
+      });
+    });
+
+    return tagCounts;
+  }
+
 
   async findAll() {
     return "Success";

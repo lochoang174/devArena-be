@@ -53,6 +53,11 @@ export class AchievementStatusService {
     return this.achievementStatusModel.find().exec();
   }
 
+  //get all achievement status by userId
+  async findAllByUserId(userId: string): Promise<AchievementStatus[]> {
+    return this.achievementStatusModel.find({ userId }).exec();
+  }
+
   findOne(id: number) {
     return `This action returns a #${id} achievementStatus`;
   }

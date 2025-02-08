@@ -10,6 +10,8 @@ import { Test } from "@nestjs/testing";
 import { TestCase } from "@app/common";
 import { AlgorithmDocument } from "../schemas/algorithm.schema";
 import { AlgorithmService } from "../algorithm/algorithm.service";
+import { AchievementModule } from "../achievement/achievement.module";
+import { AchievementService } from "../achievement/achievement.service";
 
 @Injectable()
 export class ExerciseStatusService {
@@ -17,6 +19,7 @@ export class ExerciseStatusService {
     @InjectModel("ExerciseStatus")
     private exerciseStatusModel: Model<ExerciseStatusDocument>,
     private readonly exerciseService: ExerciseService,
+    private readonly achievementService: AchievementService,
   ) { }
   async create(createExerciseStatusDto: CreateExerciseStatusDto): Promise<ExerciseStatusDocument> {
     try {
@@ -72,6 +75,20 @@ export class ExerciseStatusService {
 
     return await this.exerciseStatusModel
       .find({ userId, exerciseId: { $in: exerciseIds } })
+      .select("_id exerciseId status")
+      .exec();
+  }
+
+  async findAllByUser(userId: string) {
+    return await this.exerciseStatusModel
+      .find({ userId })
+      .select("_id exerciseId status")
+      .exec();
+  }
+
+  async findAllCompletedByUser(userId: string) {
+    return await this.exerciseStatusModel
+      .find({ userId, status: "completed" })
       .select("_id exerciseId status")
       .exec();
   }
@@ -216,6 +233,20 @@ export class ExerciseStatusService {
     const percentage = ((fasterCount / totalCount) * 100);
     return percentage
 
+  }
+
+
+  async getProfile(userId: string) {
+    const exercisesStatus = await this.findAllCompletedByUser(userId);
+    const exerciseIds = exercisesStatus.map((exercise) => exercise.exerciseId);
+    const difficulties = await this.exerciseService.countEachDifficulty(exerciseIds);
+    const tags = await this.exerciseService.countEachTag(exerciseIds);
+    const achievements = await this.achievementService.getAchievementsByUserId(userId);
+    return {
+      difficulties,
+      tags,
+      achievements,
+    }
   }
 
 

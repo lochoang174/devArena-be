@@ -54,6 +54,11 @@ export class ExerciseStatusController {
     return await this.exerciseStatusService.findAllByUserAndCourse(userId, courseId);
   }
 
+  @Get("profile")
+  async getProfile(@CurrentUser() user: IUser) {
+    return await this.exerciseStatusService.getProfile(user.id);
+  }
+
 
 
 }

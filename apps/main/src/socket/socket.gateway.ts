@@ -171,7 +171,6 @@ export class SocketGateway implements OnGatewayConnection, OnModuleInit {
         client.emit("error", { message: "User run code too many times. Please try again in a few seconds" });
         return
       }
-      console.log("data", data);
       const compileRequest = {
         code: data.code,
         codeSolution: await this.getSolutionCode(data.exerciseId, data.isAlgorithm, data.language),

@@ -6,6 +6,7 @@ import { CreateStudyDto } from "./dto/createStudy.dto";
 import { Course, CourseDocument } from "../schemas/course.schema";
 import { ExerciseStatusService } from "../exercise-status/exercise-status.service";
 import { ExerciseService } from "../exercise/exercise.service";
+import { Exercise } from "../schemas/exercise.schema";
 
 @Injectable()
 export class StudyService {
@@ -27,7 +28,7 @@ export class StudyService {
     id: string,
     updateStudyDto: Partial<CreateStudyDto>,
   ): Promise<Study> {
-    console.log(id, updateStudyDto);
+
     return this.studyModel
       .findByIdAndUpdate(new Types.ObjectId(id), updateStudyDto, { new: true })
       .exec();
@@ -62,6 +63,7 @@ export class StudyService {
   async findExercisesByCourse(courseId: string): Promise<Study[]> {
     return this.studyModel.find({ courseId }).select('_id title difficulty tags score type').exec();
   }
+
 
   async findAllByUserAndCourse(userId: string, courseId: string): Promise<{
     exercisesStatus: any[];

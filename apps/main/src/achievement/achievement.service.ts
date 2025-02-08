@@ -5,12 +5,15 @@ import { Achievement, AchievementDocument, AchievementSchema, } from '../schemas
 import { Model, Types } from 'mongoose';
 import { InjectModel } from '@nestjs/mongoose';
 import { async, retry } from 'rxjs';
+import { AchievementStatusService } from '../achievement-status/achievement-status.service';
 
 @Injectable()
 export class AchievementService {
 
   constructor(
     @InjectModel(Achievement.name) private achievementModel: Model<AchievementDocument>,
+    private readonly achievementStatusService: AchievementStatusService,
+
   ) { }
 
   async create(createAchievementDto: CreateAchievementDto):
@@ -37,6 +40,13 @@ export class AchievementService {
 
   async getAchievementById(id: string): Promise<Achievement> {
     return this.achievementModel.findById(id).exec();
+  }
+
+  async getAchievementsByUserId(userId: string) {
+    const achievementStatus = await this.achievementStatusService.findAllByUserId(userId);
+    const achievementIds = achievementStatus.map((achievement) => achievement.achievementId);
+    const achievements = await this.achievementModel.find({ _id: { $in: achievementIds } }).select("title requiredScore image").exec();
+    return achievements;
   }
 
   //patch achievement

@@ -30,6 +30,8 @@ export class CompileService {
       (async () => {
         const tempDir = path.join(__dirname, "../temp", uuidv4());
         const solutionDir = path.join(__dirname, "../solution", uuidv4());
+        console.log("data", data);
+        console.log("testcases", data.testcases);
         try {
           if (!checkThreadSleep(data.code)) {
             observer.error(
@@ -39,7 +41,6 @@ export class CompileService {
               }),
             );
           }
-
           await fs.mkdir(tempDir, { recursive: true });
           await fs.mkdir(solutionDir, { recursive: true });
 
@@ -61,7 +62,6 @@ export class CompileService {
 
               // Chỉ gửi input, không gửi marker
               const testInput = data.testcases[i].inputs.join("\n") + "\n";
-              console.log("testInput", testInput);
               // Gửi input đồng thời cho cả 2 process
               solutionProcess.stdin.write(testInput);
               userProcess.stdin.write(testInput);
@@ -71,7 +71,7 @@ export class CompileService {
                 this.getTestCaseOutput(solutionProcess, false, observer, i),
                 this.getTestCaseOutput(userProcess, true, observer, i),
               ]);
-
+              console.log('expectedOutput', expectedOutput);
               const isCorrect = userOutput.trim() === expectedOutput.trim();
 
               const status: CompileStatus = {

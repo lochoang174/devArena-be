@@ -10,6 +10,7 @@ import { AchievementStatusModule } from '../achievement-status/achievement-statu
   imports: [AchievementStatusModule],
   controllers: [AchievementController],
   providers: [AchievementService],
+  exports: [AchievementService],
 
 })
 export class AchievementModule { }
