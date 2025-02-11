@@ -30,8 +30,6 @@ export class CompileService {
       (async () => {
         const tempDir = path.join(__dirname, "../temp", uuidv4());
         const solutionDir = path.join(__dirname, "../solution", uuidv4());
-        console.log("data", data);
-        console.log("testcases", data.testcases);
         try {
           if (!checkThreadSleep(data.code)) {
             observer.error(

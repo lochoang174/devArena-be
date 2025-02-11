@@ -7,6 +7,7 @@ import { COMPILE_SERVICE_NAME } from "@app/common";
 import { join } from "path";
 import { ExerciseStatusModule } from "../exercise-status/exercise-status.module";
 import { AlgorithmModule } from "../algorithm/algorithm.module";
+import { CourseStatusModule } from "../course-status/course-status.module";
 
 @Module({
   providers: [SocketGateway, SocketService],
@@ -14,6 +15,7 @@ import { AlgorithmModule } from "../algorithm/algorithm.module";
     StudyModule,
     ExerciseStatusModule,
     AlgorithmModule,
+    CourseStatusModule,
     ClientsModule.register([
       {
         name: COMPILE_SERVICE_NAME,

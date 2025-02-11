@@ -24,6 +24,13 @@ export class StudyService {
     const select = await this.studyModel.findOne({ _id: id }).lean();
     return select.solution
   }
+
+  async findCourseId(exerciseId: string) {
+    const id = new Types.ObjectId(exerciseId); // Convert exerciseId to ObjectId if it's a string
+    const select = await this.studyModel.findOne({ _id: id }).lean();
+    return select.courseId.toString();
+  }
+
   async update(
     id: string,
     updateStudyDto: Partial<CreateStudyDto>,

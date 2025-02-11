@@ -28,6 +28,7 @@ import { ExerciseStatusService } from "../exercise-status/exercise-status.servic
 import { CreateExerciseStatusDto } from "../exercise-status/dto/create-exercise-status.dto";
 import e from "express";
 import { AlgorithmService } from "../algorithm/algorithm.service";
+import { CourseStatusService } from "../course-status/course-status.service";
 
 @WebSocketGateway({
   cors: {
@@ -51,6 +52,7 @@ export class SocketGateway implements OnGatewayConnection, OnModuleInit {
     private algorithmService: AlgorithmService,
     private exerciseService: ExerciseService,
     private exerciseStatusService: ExerciseStatusService,
+    private courseStatusService: CourseStatusService,
     @Inject(COMPILE_SERVICE_NAME) private client: ClientGrpc,
   ) { }
   onModuleInit() {
@@ -179,16 +181,29 @@ export class SocketGateway implements OnGatewayConnection, OnModuleInit {
         language: data.language,
       };
 
-      if (
-        !(await this.exerciseStatusService.checkExist(userId, data.exerciseId))
-      ) {
-        const createExerciseStatusDto: CreateExerciseStatusDto = {
-          userId: userId,
-          exerciseId: data.exerciseId,
-          submission: [],
-        };
+      if (!data.isAlgorithm) {
+        if (
+          !(await this.exerciseStatusService.checkExist(userId, data.exerciseId))
+        ) {
+          const createExerciseStatusDto: CreateExerciseStatusDto = {
+            userId: userId,
+            exerciseId: data.exerciseId,
+            submission: [],
+          };
 
-        await this.exerciseStatusService.create(createExerciseStatusDto);
+          await this.exerciseStatusService.create(createExerciseStatusDto);
+        }
+
+        const courseId = await this.studyService.findCourseId(data.exerciseId);
+
+        if (!await this.courseStatusService.checkExist(userId, courseId)) {
+
+          await this.courseStatusService.create({
+            userId,
+            courseId: courseId,
+          });
+        }
+
       }
 
       const stream = this.compileService.runCompile(compileRequest);

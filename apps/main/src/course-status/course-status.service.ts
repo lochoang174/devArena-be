@@ -1,4 +1,4 @@
-import { Injectable } from "@nestjs/common";
+import { HttpException, HttpStatus, Injectable } from "@nestjs/common";
 import { CreateCourseStatusDto } from "./dto/create-course-status.dto";
 import { UpdateCourseStatusDto } from "./dto/update-course-status.dto";
 import { COURSE_STATUS_MODEL } from "../schemas/mongoose.model";
@@ -19,43 +19,28 @@ export class CourseStatusService {
     // private readonly exerciseService: ExerciseService,
   ) { }
 
-  // async checkAndCreateCourseStatus(userId: string, courseId: string) {
-  //   try {
-  //     // Kiểm tra xem courseStatus đã tồn tại chưa
-  //     const existingStatus = await this.courseStatusModel.findOne({
-  //       userId,
-  //       courseId,
-  //     });
+  async create(createCourseStatusDto: CreateCourseStatusDto): Promise<CourseStatusDocument> {
+    try {
+      const newCourseStatus = {
+        ...createCourseStatusDto,
+        status: "in-progress",
+      }
+      return this.courseStatusModel.create(newCourseStatus);
+    } catch (err) {
+      throw new HttpException(
+        { success: false, message: 'Failed to create course status', },
+        HttpStatus.CONFLICT,
+      );
+    }
+  }
 
-  //     if (existingStatus) {
-  //       return existingStatus;
-  //     }
+  async checkExist(userId: string, courseId: string) {
+    return this.courseStatusModel.findOne({
+      userId
+      , courseId
+    }).exec();
+  }
 
-  //     // Lấy danh sách exercises của course
-  //     const exercises = await this.exerciseService.findAllByCourseId(courseId);
-
-  //     // Tạo mảng exercise statuses
-  //     const exerciseStatuses = exercises.map((exercise) => ({
-  //       exerciseId: exercise._id,
-  //       progress: 0,
-  //     }));
-
-  //     // Tạo mới courseStatus với mảng exercise statuses
-  //     const newCourseStatus = new this.courseStatusModel({
-  //       userId,
-  //       courseId,
-  //       progress: 0,
-  //       status: "in-progress",
-  //       enrolledAt: new Date(),
-  //       completedAt: null,
-  //       exerciseStatuses,
-  //     });
-
-  //     return await newCourseStatus.save();
-  //   } catch (error) {
-  //     throw new Error(`Failed to check/create course status: ${error.message}`);
-  //   }
-  // }
 
   async getUserCourseStatuses(userId: string) {
     try {

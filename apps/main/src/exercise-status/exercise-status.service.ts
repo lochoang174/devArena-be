@@ -236,16 +236,47 @@ export class ExerciseStatusService {
   }
 
 
+  async getSubmissionCountByDate(userId: string) {
+    // Get all exercise statuses of the user and populate submissions
+    const exerciseStatuses = await this.exerciseStatusModel
+      .find({ userId })
+      .populate('submission')
+      .exec();
+
+    // Use a map to store counts by date (YYYY-MM-DD)
+    const submissionCountByDate: Record<string, number> = {};
+
+    for (const exerciseStatus of exerciseStatuses) {
+      for (const submission of exerciseStatus.submission) {
+        // @ts-ignore
+        const date = submission.createdAt.toISOString().split('T')[0]; // Extract YYYY-MM-DD
+
+        // Increment the count for that date
+        submissionCountByDate[date] = (submissionCountByDate[date] || 0) + 1;
+      }
+    }
+
+    // Convert to an array of objects
+    return Object.entries(submissionCountByDate).map(([date, submissionCount]) => ({
+      date,
+      submissionCount,
+    }));
+  }
+
+
+
   async getProfile(userId: string) {
     const exercisesStatus = await this.findAllCompletedByUser(userId);
     const exerciseIds = exercisesStatus.map((exercise) => exercise.exerciseId);
     const difficulties = await this.exerciseService.countEachDifficulty(exerciseIds);
     const tags = await this.exerciseService.countEachTag(exerciseIds);
     const achievements = await this.achievementService.getAchievementsByUserId(userId);
+    const submissions = await this.getSubmissionCountByDate(userId);
     return {
       difficulties,
       tags,
       achievements,
+      submissions
     }
   }
 

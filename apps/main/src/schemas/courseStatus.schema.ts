@@ -21,9 +21,6 @@ export class CourseStatus {
   })
   status: string;
 
-  @Prop({ type: Number, default: 0 })
-  progress: number;
-
   @Prop({ type: Date })
   enrolledAt: Date;
 
