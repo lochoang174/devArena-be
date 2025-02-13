@@ -24,12 +24,72 @@ import { v4 as uuidv4 } from "uuid";
 @Injectable()
 export class CompileService {
   private readonly TESTCASE_MARKER = "###ENDTEST###\n";
+  private readonly baseDir: string;
+  private readonly tempBaseDir: string;
+  private readonly solutionBaseDir: string;
 
+  
+  constructor() {
+    // Đảm bảo path absolute từ root của project
+    this.baseDir = '/usr/src/app';
+  
+  // Set correct paths under dist/apps
+  this.tempBaseDir = path.join(this.baseDir, 'dist/apps/temp');
+  this.solutionBaseDir = path.join(this.baseDir, 'dist/apps/solution');
+  
+  console.log('Base directory:', this.baseDir);
+  console.log('Temp directory:', this.tempBaseDir);
+  console.log('Solution directory:', this.solutionBaseDir);
+    
+    // Tạo thư mục khi khởi tạo service
+    this.initializeDirectories();
+  }
+  
+  private async initializeDirectories() {
+    try {
+      // Tạo directories với full permissions
+      await fs.mkdir(this.tempBaseDir, { recursive: true, mode: 0o777 });
+      await fs.mkdir(this.solutionBaseDir, { recursive: true, mode: 0o777 });
+  
+      // Double check permissions
+      await fs.chmod(this.tempBaseDir, 0o777);
+      await fs.chmod(this.solutionBaseDir, 0o777);
+  
+      // Verify directories được tạo và có đúng permissions
+      const [tempStats, solutionStats] = await Promise.all([
+        fs.stat(this.tempBaseDir),
+        fs.stat(this.solutionBaseDir)
+      ]);
+  
+      console.log('Directory status:', {
+        temp: {
+          exists: await fs.access(this.tempBaseDir).then(() => true).catch(() => false),
+          mode: tempStats.mode.toString(8),
+          path: this.tempBaseDir
+        },
+        solution: {
+          exists: await fs.access(this.solutionBaseDir).then(() => true).catch(() => false),
+          mode: solutionStats.mode.toString(8),
+          path: this.solutionBaseDir
+        }
+      });
+  
+  
+    } catch (error) {
+      console.error('Failed to initialize directories:', {
+        error,
+        baseDir: this.baseDir,
+        tempDir: this.tempBaseDir,
+        solutionDir: this.solutionBaseDir
+      });
+      throw error;
+    }
+  }
   compile(data: CompileRequest): Observable<CompileResult> {
     return new Observable<CompileResult>((observer) => {
       (async () => {
-        const tempDir = path.join(__dirname, "../temp", uuidv4());
-        const solutionDir = path.join(__dirname, "../solution", uuidv4());
+        const tempDir = path.resolve(this.baseDir, 'dist/apps/temp', uuidv4());
+        const solutionDir = path.resolve(this.baseDir, 'dist/apps/solution', uuidv4());
         try {
           if (!checkThreadSleep(data.code)) {
             observer.error(

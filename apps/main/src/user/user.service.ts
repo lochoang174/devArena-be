@@ -4,7 +4,7 @@ import { UpdateUserDto } from "./dto/update-user.dto";
 import { ProviderEnum, User, UserDocument } from "../schemas/user.schema";
 import { InjectModel } from "@nestjs/mongoose";
 import { Model } from "mongoose";
-import * as bcrypt from "bcrypt";
+import * as bcryptjs from "bcryptjs";
 import { CustomException } from "@app/common";
 import { UpdateProfileDto } from "../auth/dto/updateProfile";
 
@@ -14,14 +14,14 @@ export class UserService {
   async onModuleInit() {
     const user = await this.userModel.findOne({ email: "admin@gmail.com" });
     if (!user) {
-      const hashedPassword = await bcrypt.hash("123456", 10);
+      const hashedPassword = await bcryptjs.hash("123456", 10);
       const newUser = new this.userModel({
-         email: "admin@gmail.com", 
-         password: hashedPassword,
-         role:'admin',
+        email: "admin@gmail.com",
+        password: hashedPassword,
+        role: "admin",
         username: "admin",
         isCreatePassword: true,
-        isEmailVerified: true, 
+        isEmailVerified: true,
       });
       await newUser.save();
     }
@@ -44,7 +44,7 @@ export class UserService {
       throw new Error("Error creating user: " + error.message);
     }
   }
-  async findByEmail(email: string):Promise<User> {
+  async findByEmail(email: string): Promise<User> {
     const user = this.userModel.findOne({ email });
     return user;
   }
@@ -58,15 +58,21 @@ export class UserService {
   }
 
   async update(id: string, updateUser: any) {
-    const user = await this.userModel.findByIdAndUpdate(id, { $set: updateUser }, { new: true, runValidators: true }).lean();
-    
+    const user = await this.userModel
+      .findByIdAndUpdate(
+        id,
+        { $set: updateUser },
+        { new: true, runValidators: true },
+      )
+      .lean();
+
     if (!user) {
-      return null
+      return null;
     }
 
     console.log(user);
     return user;
-}
+  }
 
   async verifyUser(userId: string) {
     try {
@@ -115,19 +121,17 @@ export class UserService {
       { refreshToken: refresh_token },
     );
   };
-  async addProvider(provider: string, email: string){
-    const user = await this.userModel.findOne({email}).exec()
-    if(!user){
-      throw new CustomException("Email has not been registried",403)
-
+  async addProvider(provider: string, email: string) {
+    const user = await this.userModel.findOne({ email }).exec();
+    if (!user) {
+      throw new CustomException("Email has not been registried", 403);
     }
-    const checkExist = await user.providers.includes(provider as ProviderEnum)
-    if(checkExist){
-      throw new CustomException("Provider exist",400)
-    }
-    else{
-      user.providers.push(provider as ProviderEnum)
-      user.save()
+    const checkExist = await user.providers.includes(provider as ProviderEnum);
+    if (checkExist) {
+      throw new CustomException("Provider exist", 400);
+    } else {
+      user.providers.push(provider as ProviderEnum);
+      user.save();
     }
   }
 }

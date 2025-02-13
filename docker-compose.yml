@@ -1,18 +1,31 @@
+# docker-compose.yml
 version: '3.8'
 
 services:
-  openjdk:
-    image: openjdk:11
-    container_name: openjdk-container
+  compile:
+    image: lochoang174/dev-arena-be-compile:latest
+    container_name: compile-service
+    command: npm run start:compile
     volumes:
-      - ./src:/usr/src/app
-    working_dir: /usr/src/app
+      - /var/run/docker.sock:/var/run/docker.sock
+      - ./dist:/usr/src/app/dist
+    networks:
+      - app-network
+    privileged: true
 
-  gcc:
-    image: gcc:latest
-    container_name: gcc-container
-    volumes:
-      - ./src:/usr/src/app
-    working_dir: /usr/src/app
+  main:
+    image: lochoang174/dev-arena-be-main:latest
+    container_name: main-service
+    command: npm run start:dev
+    ports:
+      - '3001:3001'
+    env_file:
+      - ./apps/main/.env
+    networks:
+      - app-network
+    depends_on:
+      - compile
 
-
+networks:
+  app-network:
+    driver: bridge

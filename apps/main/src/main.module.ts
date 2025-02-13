@@ -30,9 +30,15 @@ import { ContestStatusModule } from './contest-status/contest-status.module';
 import { AchievementModule } from './achievement/achievement.module';
 import { ServeStaticModule } from '@nestjs/serve-static';
 import { AchievementStatusModule } from './achievement-status/achievement-status.module';
+import { ThrottlerModule } from "@nestjs/throttler";
 
 @Module({
   imports: [
+    ThrottlerModule.forRoot([{
+      ttl: 60,
+      limit: 10, 
+    }]),
+    
     ServeStaticModule.forRoot({
       rootPath: join(__dirname, '../../../apps/main/', 'uploads'), 
       serveRoot: '/uploads', // Serve files at /uploads

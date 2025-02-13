@@ -4,11 +4,11 @@ import {
   Injectable,
   UnauthorizedException,
 } from "@nestjs/common";
-import { compare } from "bcrypt";
+import { compare } from "bcryptjs";
 import { UserService } from "../user/user.service";
 import { SignupDTO } from "./dto/signup.dto";
 import { ProviderEnum, RoleEnum } from "../schemas/user.schema";
-import * as bcrypt from "bcrypt";
+import * as bcryptjs from "bcryptjs";
 import { CustomException } from "@app/common";
 import { EmailService } from "../email/email.service";
 import { TokenService } from "./jwt/token.service";
@@ -30,7 +30,7 @@ export class AuthService {
     private readonly emailService: EmailService,
     private jwtService: JwtService,
     private configService: ConfigService,
-  ) { }
+  ) {}
   async validate(
     emailValidate: string,
     password: string,
@@ -39,13 +39,16 @@ export class AuthService {
     let user = await this.usersService.findByEmail(emailValidate);
 
     if (!user) {
-      if(provider!==ProviderEnum.CREDENTIALS){
-        const username = emailValidate.split("@")[0]
-        user =await this.signup({email:emailValidate,password:"",provider:provider,username,})
-      }
-      else{
+      if (provider !== ProviderEnum.CREDENTIALS) {
+        const username = emailValidate.split("@")[0];
+        user = await this.signup({
+          email: emailValidate,
+          password: "",
+          provider: provider,
+          username,
+        });
+      } else {
         throw new UnauthorizedException("Invalid credentials");
-
       }
     }
     if (provider === ProviderEnum.CREDENTIALS) {
@@ -76,17 +79,19 @@ export class AuthService {
     }
 
     // Remove password from response
-    const { role, _id, username, email, providers,avatar, isCreatePassword } = user;
-    const url_profile= this.configService.get("URL_PROFILE")
-    return { 
-      role, 
-      id: _id, 
-      username, 
-      email, 
+    const { role, _id, username, email, providers, avatar, isCreatePassword } =
+      user;
+    const url_profile = this.configService.get("URL_PROFILE");
+    return {
+      role,
+      id: _id,
+      username,
+      email,
       providers,
       ...(avatar && { avatar: `${url_profile}/${avatar}` }),
-      isCreatePassword 
-  };  }
+      isCreatePassword,
+    };
+  }
 
   async signup(signupDto: SignupDTO) {
     const { email, password, provider, username } = signupDto;
@@ -105,7 +110,7 @@ export class AuthService {
         }
         // Add new provider to existing user
         existingUser.providers.push(provider);
-        await this.usersService.update(existingUser._id,existingUser);
+        await this.usersService.update(existingUser._id, existingUser);
         // await this.usersService.update(existingUser._id.toString(), {
         //   providers: existingUser.providers,
         // });
@@ -120,7 +125,7 @@ export class AuthService {
 
     if (provider === ProviderEnum.CREDENTIALS) {
       // For credentials signup, hash password and prepare OTP
-      hashedPassword = await bcrypt.hash(password, 10);
+      hashedPassword = await bcryptjs.hash(password, 10);
       isCreatePassword = true;
     }
 
@@ -128,7 +133,11 @@ export class AuthService {
     const newUser = await this.usersService.create({
       username,
       email,
-      providers:  [ProviderEnum.DISCORD,ProviderEnum.GITHUB,ProviderEnum.GOOGLE],
+      providers: [
+        ProviderEnum.DISCORD,
+        ProviderEnum.GITHUB,
+        ProviderEnum.GOOGLE,
+      ],
       isEmailVerified: provider !== ProviderEnum.CREDENTIALS, // OAuth users are considered verified
       role: RoleEnum.CLIENT,
       password: hashedPassword,
@@ -148,7 +157,7 @@ export class AuthService {
         id: user.id,
         role: user.role,
         username: user.username,
-        email: user.email, 
+        email: user.email,
       },
       {
         secret: this.configService.get<string>("JWT_ACCESS_TOKEN_SECRET"),
@@ -243,11 +252,10 @@ export class AuthService {
   }
 
   async addProvider(provider: string, email: string) {
-    this.usersService.addProvider(provider, email)
+    this.usersService.addProvider(provider, email);
   }
   async refreshToken(old_refreshToken: string) {
     try {
-
       // 1. Kiểm tra tính hợp lệ của refresh token cũ và xác minh thời gian hết hạn
       const payload: IUser = this.jwtService.verify(old_refreshToken, {
         secret: this.configService.get<string>("JWT_REFRESH_TOKEN_SECRET"),
@@ -257,7 +265,9 @@ export class AuthService {
       }
 
       // 2. Kiểm tra xem refresh token có khớp với refresh token của người dùng trong cơ sở dữ liệu
-      const currentRefreshToken = await this.usersService.findOne(payload.id).select("refreshToken");
+      const currentRefreshToken = await this.usersService
+        .findOne(payload.id)
+        .select("refreshToken");
 
       if (currentRefreshToken.refreshToken !== old_refreshToken) {
         throw new UnauthorizedException("Invalid refresh token");
@@ -273,8 +283,10 @@ export class AuthService {
         },
         {
           secret: this.configService.get<string>("JWT_REFRESH_TOKEN_SECRET"),
-          expiresIn: this.configService.get<string>("JWT_REFRESH_TOKEN_EXPIRED"), // Cập nhật thời gian hết hạn theo yêu cầu
-        }
+          expiresIn: this.configService.get<string>(
+            "JWT_REFRESH_TOKEN_EXPIRED",
+          ), // Cập nhật thời gian hết hạn theo yêu cầu
+        },
       );
 
       // 4. Cập nhật refresh token mới vào cơ sở dữ liệu
@@ -291,7 +303,7 @@ export class AuthService {
         {
           secret: this.configService.get<string>("JWT_ACCESS_TOKEN_SECRET"),
           expiresIn: this.configService.get<string>("JWT_ACCESS_TOKEN_EXPIRED"), // Cập nhật thời gian hết hạn theo yêu cầu
-        }
+        },
       );
 
       return {
@@ -299,10 +311,10 @@ export class AuthService {
         refresh_token: newRefreshToken,
       };
     } catch (error) {
-      if (error.name === 'TokenExpiredError') {
+      if (error.name === "TokenExpiredError") {
         throw new ForbiddenException("Refresh token expired");
       }
-      console.log(error)
+      console.log(error);
       throw new CustomException("Could not refresh token", 400);
     }
   }
@@ -311,38 +323,47 @@ export class AuthService {
     const oldUser = await this.usersService.findOne(userId);
 
     if (updateData.avatar !== null) {
-      
       // Nếu user có ảnh cũ và có ảnh mới được upload
       if (oldUser.avatar && updateData.avatar) {
         try {
           // Xóa file ảnh cũ trong thư mục uploads (cùng cấp với src)
-          const oldAvatarPath = join(process.cwd(), './apps/main/uploads', '/profile', oldUser.avatar);
+          const oldAvatarPath = join(
+            process.cwd(),
+            "./apps/main/uploads",
+            "/profile",
+            oldUser.avatar,
+          );
           await unlink(oldAvatarPath);
         } catch (error) {
-          console.log('Error deleting old avatar:', error);
+          console.log("Error deleting old avatar:", error);
         }
       }
     }
 
-    const updatedUser = await this.usersService.update(userId, {...updateData});
-    const url_profile= this.configService.get("URL_PROFILE")
+    const updatedUser = await this.usersService.update(userId, {
+      ...updateData,
+    });
+    const url_profile = this.configService.get("URL_PROFILE");
 
     return {
-      ...(updateData.avatar && { avatar: `${url_profile}/${updateData.avatar}` }),
-      username: updatedUser.username
+      ...(updateData.avatar && {
+        avatar: `${url_profile}/${updateData.avatar}`,
+      }),
+      username: updatedUser.username,
     };
-    
   }
   async updatePassword(userId: string, updateDto: UpdatePasswordDto) {
     const user = await this.usersService.findOne(userId);
-    
+
     if (!user) {
       throw new BadRequestException("User not found.");
     }
 
     if (user.isCreatePassword) {
-    
-      const isOldPasswordValid = await compare(updateDto.oldPassword, user.password);
+      const isOldPasswordValid = await compare(
+        updateDto.oldPassword,
+        user.password,
+      );
 
       if (!isOldPasswordValid) {
         throw new BadRequestException("Old password is incorrect.");
@@ -350,8 +371,11 @@ export class AuthService {
     }
 
     // Hash mật khẩu mới và cập nhật
-    const newHashedPassword = await bcrypt.hash(updateDto.newPassword, 10);
-    const i=await this.usersService.update(userId, {password:  newHashedPassword, isCreatePassword:true});
+    const newHashedPassword = await bcryptjs.hash(updateDto.newPassword, 10);
+    const i = await this.usersService.update(userId, {
+      password: newHashedPassword,
+      isCreatePassword: true,
+    });
     return { message: "Password updated successfully." };
   }
   async forgotPassword(email: string) {
@@ -361,22 +385,24 @@ export class AuthService {
       if (!user) {
         throw new CustomException("User not found", 404);
       }
-  
+
       // Generate a password reset token
       const resetToken = this.jwtService.sign(
         { id: user._id },
         {
           secret: this.configService.get<string>("JWT_RESET_PASSWORD_SECRET"),
           expiresIn: "15m", // Token expires in 15 minutes
-        }
+        },
       );
-  
+
       // Save the reset token in the database
-      await this.usersService.update(user._id.toString(), {resetPasswordToken:resetToken});
-  
+      await this.usersService.update(user._id.toString(), {
+        resetPasswordToken: resetToken,
+      });
+
       // Generate password reset URL
       const resetUrl = `${this.configService.get<string>("FRONTEND_URL")}/auth/reset-password?token=${resetToken}`;
-  
+
       // Email content
       const emailContent = `
         <div>
@@ -386,23 +412,30 @@ export class AuthService {
           <p>This link will expire in 15 minutes.</p>
         </div>
       `;
-  
+
       // Send reset email
-      await this.emailService.sendMail(email, "Password Reset Request", "", emailContent);
-  
+      await this.emailService.sendMail(
+        email,
+        "Password Reset Request",
+        "",
+        emailContent,
+      );
+
       return { message: "Password reset link sent to your email" };
     } catch (error) {
       throw error;
     }
   }
-  async resetPassword( reset: ResetPassworDto){
+  async resetPassword(reset: ResetPassworDto) {
     const payload = this.jwtService.verify(reset.token, {
       secret: this.configService.get<string>("JWT_RESET_PASSWORD_SECRET"),
     });
-    const user = await this.usersService.findOne(payload.id)
-    const newHashedPassword = await bcrypt.hash(reset.newPassword, 10);
-    await this.usersService.update(user.id, {password:  newHashedPassword, isCreatePassword:true});
-    return 
-
+    const user = await this.usersService.findOne(payload.id);
+    const newHashedPassword = await bcryptjs.hash(reset.newPassword, 10);
+    await this.usersService.update(user.id, {
+      password: newHashedPassword,
+      isCreatePassword: true,
+    });
+    return;
   }
 }
