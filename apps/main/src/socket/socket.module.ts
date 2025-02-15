@@ -23,8 +23,8 @@ import { CourseStatusModule } from "../course-status/course-status.module";
         options: {
           package: "compile",
           protoPath: join(__dirname, "../../../proto/compile.proto"), // Đường dẫn đúng
-          url: 'localhost:5000'  // Quan trọng: Listen trên tất cả interfaces
-
+          url: 'compile:5000', // Quan trọng: Listen trên tất cả interfaces
+          
         },
       },
     ]),

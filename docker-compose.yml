@@ -1,24 +1,30 @@
 # docker-compose.yml
-version: '3.8'
+version: "3.8"
 
 services:
   compile:
-    image: lochoang174/dev-arena-be-compile:latest
+    build:
+      dockerfile: ./apps/compile/Dockerfile
+      target: development
+    # image: lochoang174/dev-arena-be-compile:latest
+
     container_name: compile-service
     command: npm run start:compile
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock
-      - ./dist:/usr/src/app/dist
     networks:
       - app-network
     privileged: true
 
   main:
-    image: lochoang174/dev-arena-be-main:latest
+    # image: lochoang174/dev-arena-be-main:latest
+    build:
+      dockerfile: ./apps/main/Dockerfile
+      target: development
     container_name: main-service
     command: npm run start:dev
     ports:
-      - '3001:3001'
+      - "3001:3001"
     env_file:
       - ./apps/main/.env
     networks:

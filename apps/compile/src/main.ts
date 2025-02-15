@@ -14,7 +14,7 @@ async function bootstrap() {
       package: 'compile',
       protoPath: join(__dirname, '../../../proto/compile.proto'), // Đường dẫn đúng
       url: '0.0.0.0:5000'  // Quan trọng: Listen trên tất cả interfaces
-
+      
     },
   });  
 

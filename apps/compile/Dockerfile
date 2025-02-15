@@ -52,13 +52,36 @@ RUN groupadd -g 999 docker && \
     usermod -aG docker node && \
     chmod 666 /var/run/docker.sock
 
-# Make sure compilation directories are properly owned
-RUN mkdir -p dist/apps/compile/temp dist/apps/compile/solution && \
-    chown -R node:node dist/apps/compile && \
-    chmod -R 777 dist/apps/compile
-VOLUME ["/usr/src/app/dist"]
+USER root
+RUN mkdir -p /usr/src/app/dist/apps/temp /usr/src/app/dist/apps/solution && \
+        chmod -R 777 /usr/src/app/dist
+
 
 
 # Start application as root
 CMD ["node", "dist/apps/compile/main"]
 
+# Dockerfile
+# FROM node:20-slim AS development
+
+# WORKDIR /usr/src/app
+
+# # Install Docker CLI and procps
+# RUN apt-get update && apt-get install -y \
+#     docker.io \
+#     procps \
+#     && rm -rf /var/lib/apt/lists/*
+
+# # Copy package files
+# COPY Solution.java .
+
+# USER root
+
+# CMD ["sh", "-c", "\
+#     echo '=== Current directory contents =====' && \
+#     ls -la && \
+#     docker run \
+#     --rm \
+#     -v /usr/src/app:/ \
+#     openjdk:11 \
+#     sh -c 'cd / && pwd && ls -la && javac -encoding UTF8 Solution.java'"]

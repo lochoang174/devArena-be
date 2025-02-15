@@ -1,142 +1,54 @@
 // helper.ts
+import { CompileResult } from "@app/common";
 import { spawn, ChildProcessWithoutNullStreams } from "child_process";
 import * as fs from "fs/promises";
 import * as path from "path";
-
-
+import { Subscriber } from "rxjs";
 
 async function compileJava(tempDir: string, code: string): Promise<void> {
-  // Trong container, /usr/src/app/dist được mount từ ./dist trên host
-  // Vì vậy chỉ cần lấy phần path sau dist/
-  const containerDistPath = '/usr/src/app/dist/';
-  const relativePathAfterDist = tempDir.slice(tempDir.indexOf(containerDistPath) + containerDistPath.length);
-  
-  // Host path sẽ là dist/<relative-path>
-  const hostTempDir = path.join('dist', relativePathAfterDist);
   const fileName = "Solution.java";
-  const filePath = path.join(hostTempDir, fileName);
+  const filePath = path.join(tempDir, fileName);
+  await fs.writeFile(filePath, code, "utf8");
+  console.log("temp dir: " + tempDir);
+  const files = await fs.readdir(tempDir);
+  console.log("\n=== Directory Contents ===");
+  console.log("Directory path:", tempDir);
+  console.log("Files found:", files);
+  const absolutePath = path.resolve(tempDir);
+  const compileProcess = spawn("sh", [
+    "-c",
+    `
+    echo '=== Current directory contents =====' &&
+    ls -la "${absolutePath}" &&
+    echo '=== Starting OpenJDK container =====' &&
+    CID=$(docker run -d openjdk:11 sleep infinity) &&
+    echo "Container ID: $CID" &&
+    echo '=== Copying file to OpenJDK container =====' &&
+    docker cp "${absolutePath}/${fileName}" $CID:/Solution.java &&
+    echo '=== Compiling in OpenJDK container =====' &&
+    docker exec $CID sh -c 'ls -la && javac -encoding UTF8 Solution.java' &&
+    echo '=== Copying compiled file back =====' &&
+    docker cp $CID:/Solution.class "${absolutePath}/" &&
+    echo '=== Cleaning up container =====' &&
+    docker stop $CID &&
+    docker rm $CID
+    `,
+  ]);
+  let compileErrors = "";
+  compileProcess.stderr.on("data", (data) => {
+    compileErrors += data.toString();
+  });
 
-  console.log('Starting compilation process with:');
-  console.log('Container path:', tempDir);
-  console.log('Extracted relative path:', relativePathAfterDist);
-  console.log('Host mount path:', hostTempDir);
-  console.log('Final file path:', filePath);
-
-  try {
-    // Create directory on host mounted volume
-    await fs.mkdir(hostTempDir, { recursive: true, mode: 0o777 });
-    
-    // Write file to mounted volume
-    await fs.writeFile(filePath, code);
-    await fs.chmod(filePath, 0o666);
-    
-    // Verify file exists
-    const fileExists = await fs.access(filePath)
-      .then(() => true)
-      .catch(() => false);
-    
-    if (!fileExists) {
-      throw new Error(`Failed to create file at ${filePath}`);
-    }
-
-    console.log('File created successfully at:', filePath);
-    const fileContents = await fs.readFile(filePath, 'utf8');
-    console.log('File contents:', fileContents.substring(0, 100) + '...');
-
-    // Verify mount using relative host path
-    const verifyMount = spawn("docker", [
-      "run",
-      "--rm",
-      "-v", `${hostTempDir}:/workspace:rw`,
-      "ubuntu:latest",
-      "ls", "-la", "/workspace"
-    ]);
-    
-    let verifyOutput = "";
-    let verifyError = "";
-    
-    verifyMount.stdout.on("data", (data) => {
-      const message = data.toString().trim();
-      verifyOutput += message + "\n";
-      console.log("[Mount Verify][stdout]:", message);
+  await new Promise((resolve, reject) => {
+    compileProcess.on("close", (code) => {
+      if (code === 0) {
+        resolve(true);
+      } else {
+        console.log(compileErrors);
+        reject(new Error(`Java compilation failed: ${compileErrors}`));
+      }
     });
-    
-    verifyMount.stderr.on("data", (data) => {
-      const message = data.toString().trim();
-      verifyError += message + "\n";
-      console.log("[Mount Verify][stderr]:", message);
-    });
-    
-    console.log("[Mount Verify] Executing command:", 
-      `docker run --rm -v ${hostTempDir}:/workspace:rw ubuntu:latest ls -la /workspace`
-    );
-
-    // Compile using relative host path for volume mount
-    const compileProcess = spawn("docker", [
-      "run",
-      "--rm",
-      "-v", `${hostTempDir}:/workspace:rw`,
-      "-w", "/workspace",
-      "--user", "root",
-      "openjdk:11",
-      "sh",
-      "-c",
-      `
-      set -ex
-      # Debug information
-      pwd
-      ls -la
-      
-      # Verify file exists and is readable
-      cat Solution.java
-      
-      # Compile with verbose output
-      javac -verbose -d /workspace Solution.java
-      
-      # Verify compilation result
-      ls -la
-      `
-    ]);
-
-    let output = "";
-    let errorOutput = "";
-
-    compileProcess.stdout.on("data", (data) => {
-      const message = data.toString().trim();
-      output += message + "\n";
-      console.log("[Compile][stdout]:", message);
-    });
-
-    compileProcess.stderr.on("data", (data) => {
-      const message = data.toString().trim();
-      errorOutput += message + "\n";
-      console.log("[Compile][stderr]:", message);
-    });
-
-    return new Promise((resolve, reject) => {
-      compileProcess.on("close", (code) => {
-        if (code === 0) {
-          console.log('[Compile] Successfully completed');
-          resolve();
-        } else {
-          const fullError = `Compilation failed with code ${code}\nSTDOUT:\n${output}\nSTDERR:\n${errorOutput}`;
-          console.error("[Compile] Failed:", fullError);
-          reject(new Error(fullError));
-        }
-      });
-    });
-  } catch (error) {
-    console.error('Compilation process failed:', error);
-    throw error;
-  } finally {
-    // Log final directory state
-    try {
-      const finalContents = await fs.readdir(hostTempDir);
-      console.log('Final directory contents:', finalContents);
-    } catch (error) {
-      console.error('Failed to read final directory state:', error);
-    }
-  }
+  });
 }
 // Compile C code
 async function compileC(tempDir: string, code: string): Promise<void> {
@@ -174,7 +86,7 @@ async function compileC(tempDir: string, code: string): Promise<void> {
   });
 }
 
-// Compile C++ code 
+// Compile C++ code
 async function compileCpp(tempDir: string, code: string): Promise<void> {
   const fileName = "solution.cpp";
   const filePath = path.join(tempDir, fileName);
@@ -243,32 +155,20 @@ async function startProcess(
   tempDir: string,
 ): Promise<ChildProcessWithoutNullStreams> {
   try {
-    console.log("start process")
+    console.log("start process");
     if (language === "java") {
-      return spawn("docker", [
-          "run",
-          "-i",
-          "--rm",
-          "--memory", "100m",
-          "--memory-swap", "100m",
-          "--cpus", "1",
-          // Thêm quyền và SELinux context
-          "-v", `${tempDir}:/usr/src/app:rw,Z`,
-          "-w", "/usr/src/app",
-
-          // Security options
-          "--security-opt", "label=disable",
-          // Thêm capabilities nếu cần
-          "--cap-add=SYS_ADMIN",
-          "openjdk:11",
-          "timeout",
-          "30s",
-          "java",
-          "-cp",
-          ".",
-          "Solution"
-      ]);
-  } else if (language === "c") {
+      return spawn("sh", ["-c", `
+        CID=$(docker create --memory 100m --memory-swap 100m --cpus 1 --security-opt label=disable --cap-add=SYS_ADMIN openjdk:11 sleep infinity) &&
+        docker start $CID &&
+        docker exec $CID mkdir -p /workspace &&
+        docker cp "${tempDir}/Solution.class" $CID:/workspace/ &&
+        docker exec -i $CID timeout 30s java -cp /workspace Solution;
+        EXIT_CODE=$?;
+        docker rm -f $CID;
+        exit $EXIT_CODE
+        `]);
+    }
+    else if (language === "c") {
       return spawn("docker", [
         "run",
         "-i",
@@ -286,7 +186,7 @@ async function startProcess(
         "gcc:latest",
         "timeout",
         "30s",
-        "./solution"
+        "./solution",
       ]);
     } else if (language === "cpp") {
       return spawn("docker", [
@@ -306,7 +206,7 @@ async function startProcess(
         "gcc:latest",
         "timeout",
         "30s",
-        "./solution"
+        "./solution",
       ]);
     }
     throw new Error("Unsupported language");
@@ -325,4 +225,287 @@ const checkThreadSleep = (code: string): boolean => {
   }
   return true;
 };
-export { compileJava, compileC, compileCpp, startProcess, getProcessOutput, checkThreadSleep };
+
+async function compileAndRunJava(
+  code: string, 
+  input: string, 
+  tempDir: string, 
+  isUser: boolean = false,
+  subscriber?: Subscriber<CompileResult>,
+  testCaseIndex?: number
+): Promise<string> {
+  const fileName = "Solution.java";
+  const filePath = path.join(tempDir, fileName);
+  const inputFile = path.join(tempDir, "input.txt");
+  
+  await Promise.all([
+    fs.writeFile(filePath, code, "utf8"),
+    fs.writeFile(inputFile, input, "utf8")
+  ]);
+
+  return new Promise<string>((resolve, reject) => {
+    const process = spawn("sh", ["-c", `
+      CID=$(docker create \
+        --memory 100m \
+        --memory-swap 100m \
+        --cpus 1 \
+        --security-opt label=disable \
+        openjdk:11 \
+        sh -c 'cd /workspace && \
+               javac -encoding UTF8 Solution.java && \
+               timeout 30s java Solution < input.txt') &&
+      docker cp "${tempDir}/." "$CID:/workspace/" &&
+      docker start -a $CID;
+      EXIT_CODE=$?;
+      docker rm -f $CID 2>/dev/null || true;
+      exit $EXIT_CODE
+    `]);
+
+    let output = "";
+    let errorOutput = "";
+    let timer: NodeJS.Timeout | null = null;
+
+    const completeOutput = () => {
+      if (timer) {
+        clearTimeout(timer);
+        timer = null;
+      }
+      process.stdout.removeListener("data", outputHandler);
+      resolve(output);
+    };
+
+    const outputHandler = (data: Buffer) => {
+      const chunk = data.toString();
+      output += chunk;
+
+      if (isUser && subscriber && typeof testCaseIndex === 'number') {
+        subscriber.next({
+          LogRunCode: {
+            chunk,
+            testCaseIndex,
+          },
+        });
+      }
+
+      // Reset timer when new data arrives
+      if (timer) {
+        clearTimeout(timer);
+      }
+
+      // Wait 1000ms after the last chunk to complete
+      timer = setTimeout(() => {
+        completeOutput();
+      }, 1000);
+    };
+
+    process.stdout.on("data", outputHandler);
+
+    process.stderr.on("data", (data) => {
+      if (timer) {
+        clearTimeout(timer);
+      }
+      errorOutput += data.toString();
+    });
+
+    process.on("close", (code) => {
+      if (timer) {
+        clearTimeout(timer);
+      }
+
+      if (code === 124) {
+        reject(new Error("Execution timeout"));
+      } else if (code !== 0) {
+        reject(new Error(`Compilation/Execution failed (code ${code}): ${errorOutput}`));
+      } else {
+        completeOutput();
+      }
+    });
+  });
+}
+// Helper function to prepare directories
+async function prepareDirectory(baseDir: string, subPath: string): Promise<string> {
+  const dir = path.resolve(baseDir, subPath);
+  await fs.mkdir(dir, { recursive: true, mode: 0o777 });
+  return dir;
+}
+
+interface CompileConfig {
+  fileName: string;
+  dockerImage: string;
+  compileCommand: string;
+  runCommand: string;
+}
+
+function getLanguageConfig(language: string): CompileConfig {
+  switch (language) {
+    case 'java':
+      return {
+        fileName: 'Solution.java',
+        dockerImage: 'openjdk:11',
+        compileCommand: 'javac -encoding UTF8 Solution.java',
+        runCommand: 'java Solution'
+      };
+    case 'cpp':
+      return {
+        fileName: 'solution.cpp',
+        dockerImage: 'gcc:latest',
+        compileCommand: 'g++ -o solution solution.cpp -std=c++17',
+        runCommand: './solution'
+      };
+    case 'c':
+      return {
+        fileName: 'solution.c',
+        dockerImage: 'gcc:latest',
+        compileCommand: 'gcc -o solution solution.c',
+        runCommand: './solution'
+      };
+    default:
+      throw new Error('Unsupported language');
+  }
+}
+
+async function compileAndRun(
+  code: string,
+  input: string,
+  language: string,
+  tempDir: string,
+  isUser: boolean = false,
+  subscriber?: Subscriber<CompileResult>,
+  testCaseIndex?: number
+): Promise<string> {
+  const config = getLanguageConfig(language);
+  const filePath = path.join(tempDir, config.fileName);
+  const inputFile = path.join(tempDir, "input.txt");
+
+  await Promise.all([
+    fs.writeFile(filePath, code, "utf8"),
+    fs.writeFile(inputFile, input, "utf8")
+  ]);
+
+  return new Promise<string>((resolve, reject) => {
+    const process = spawn("sh", ["-c", `
+      CID=$(docker create \
+        --memory 100m \
+        --memory-swap 100m \
+        --cpus 1 \
+        --security-opt label=disable \
+        ${config.dockerImage} \
+        sh -c 'cd /workspace && \
+               ${config.compileCommand} && \
+               timeout 30s ${config.runCommand} < input.txt') > /dev/null 2>&1 &&
+      docker cp "${tempDir}/." "$CID:/workspace/" > /dev/null 2>&1 &&
+      docker start -a $CID &&
+      EXIT_CODE=$?;
+      docker rm -f $CID > /dev/null 2>&1 || true;
+      exit $EXIT_CODE
+    `]);
+
+    let output = "";
+    let errorOutput = "";
+    let timer: NodeJS.Timeout | null = null;
+    let hasReceivedOutput = false;
+
+    const isSystemOutput = (str: string): boolean => {
+      if (/^[a-f0-9]{64}$/.test(str.trim())) return true;
+      if (/^(?:\d+\s+)+\d+$/.test(str.trim())) return true;
+      return false;
+    };
+
+    const completeOutput = () => {
+      if (timer) {
+        clearTimeout(timer);
+        timer = null;
+      }
+      process.stdout.removeListener("data", outputHandler);
+     
+      // Nếu không có output nào được nhận
+      if (!hasReceivedOutput) {
+        let noRes: string ="no response"
+        if (isUser && subscriber && typeof testCaseIndex === 'number') {
+          subscriber.next({
+            LogRunCode: {
+              chunk: noRes,
+              testCaseIndex,
+            },
+          });
+        }
+        resolve(noRes);
+      } else {
+        resolve(output);
+      }
+    };
+
+    const outputHandler = (data: Buffer) => {
+      const chunk = data.toString();
+
+      if (true) {
+        output += chunk;
+        hasReceivedOutput = true;
+
+        if (isUser && subscriber && typeof testCaseIndex === 'number') {
+          subscriber.next({
+            LogRunCode: {
+              chunk,
+              testCaseIndex,
+            },
+          });
+        }
+      }
+
+      if (timer) {
+        clearTimeout(timer);
+      }
+
+      timer = setTimeout(() => {
+        completeOutput();
+      }, 1000);
+    };
+
+    process.stdout.on("data", outputHandler);
+
+    process.stderr.on("data", (data) => {
+      if (timer) {
+        clearTimeout(timer);
+      }
+      const errorChunk = data.toString();
+      if (!isSystemOutput(errorChunk)) {
+        errorOutput += errorChunk;
+      }
+    });
+
+    // Thêm timeout tổng thể để xử lý trường hợp không có output
+    const globalTimeout = setTimeout(() => {
+      if (!hasReceivedOutput) {
+        completeOutput();
+      }
+    }, 31000); // Đặt thời gian lớn hơn timeout của lệnh (30s)
+
+    process.on("close", (code) => {
+      clearTimeout(globalTimeout);
+      
+      if (timer) {
+        clearTimeout(timer);
+      }
+
+      if (code === 124) {
+        reject(new Error("Execution timeout"));
+      } else if (code !== 0) {
+        reject(new Error(`Compilation/Execution failed (code ${code}): ${errorOutput}`));
+      } else {
+        completeOutput();
+      }
+    });
+  });
+}
+
+
+export {
+  compileJava,
+  compileC,
+  compileCpp,
+  startProcess,
+  getProcessOutput,
+  checkThreadSleep,
+  compileAndRunJava,
+  compileAndRun
+};
