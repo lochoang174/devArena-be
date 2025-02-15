@@ -180,19 +180,19 @@ export class SocketGateway implements OnGatewayConnection, OnModuleInit {
         language: data.language,
       };
 
+      if (
+        !(await this.exerciseStatusService.checkExist(userId, data.exerciseId))
+      ) {
+        const createExerciseStatusDto: CreateExerciseStatusDto = {
+          userId: userId,
+          exerciseId: data.exerciseId,
+          submission: [],
+        };
+
+        await this.exerciseStatusService.create(createExerciseStatusDto);
+      }
+
       if (!data.isAlgorithm) {
-        if (
-          !(await this.exerciseStatusService.checkExist(userId, data.exerciseId))
-        ) {
-          const createExerciseStatusDto: CreateExerciseStatusDto = {
-            userId: userId,
-            exerciseId: data.exerciseId,
-            submission: [],
-          };
-
-          await this.exerciseStatusService.create(createExerciseStatusDto);
-        }
-
         const courseId = await this.studyService.findCourseId(data.exerciseId);
 
         if (!await this.courseStatusService.checkExist(userId, courseId)) {
