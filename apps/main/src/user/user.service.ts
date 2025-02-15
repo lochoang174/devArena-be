@@ -12,11 +12,11 @@ import { UpdateProfileDto } from "../auth/dto/updateProfile";
 export class UserService {
   constructor(@InjectModel("User") private userModel: Model<User>) {}
   async onModuleInit() {
-    const user = await this.userModel.findOne({ email: "admin@gmail.com" });
+    const user = await this.userModel.findOne({ email: "admin1@gmail.com" });
     if (!user) {
       const hashedPassword = await bcryptjs.hash("123456", 10);
       const newUser = new this.userModel({
-        email: "admin@gmail.com",
+        email: "admin1@gmail.com",
         password: hashedPassword,
         role: "admin",
         username: "admin",
