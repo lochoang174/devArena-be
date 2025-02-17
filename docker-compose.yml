@@ -14,10 +14,10 @@ services:
     networks:
       - app-network
   compile:
-    build:
-      dockerfile: ./apps/compile/Dockerfile
-      target: development
-    # image: lochoang174/dev-arena-be-compile:latest
+    # build:
+    #   dockerfile: ./apps/compile/Dockerfile
+    #   target: development
+    image: lochoang174/dev-arena-be-compile:latest
     container_name: compile-service
     command: npm run start:compile
     volumes:
@@ -26,10 +26,10 @@ services:
       - app-network
     privileged: true
   main:
-    # image: lochoang174/dev-arena-be-main:latest
-    build:
-      dockerfile: ./apps/main/Dockerfile
-      target: development
+    image: lochoang174/dev-arena-be-main:latest
+    # build:
+    #   dockerfile: ./apps/main/Dockerfile
+    #   target: development
     container_name: main-service
     command: npm run start:dev
     ports:
