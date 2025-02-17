@@ -2,12 +2,22 @@
 version: "3.8"
 
 services:
+  openjdk:
+    image: openjdk:11
+    container_name: openjdk-container
+    networks:
+      - app-network
+
+  gcc:
+    image: gcc:latest
+    container_name: gcc-container
+    networks:
+      - app-network
   compile:
     build:
       dockerfile: ./apps/compile/Dockerfile
       target: development
     # image: lochoang174/dev-arena-be-compile:latest
-
     container_name: compile-service
     command: npm run start:compile
     volumes:
@@ -15,7 +25,6 @@ services:
     networks:
       - app-network
     privileged: true
-
   main:
     # image: lochoang174/dev-arena-be-main:latest
     build:

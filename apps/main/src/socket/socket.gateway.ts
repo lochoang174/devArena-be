@@ -97,35 +97,24 @@ export class SocketGateway implements OnGatewayConnection, OnModuleInit {
     @ConnectedSocket() client: Socket,
   ) {
 
-    // Gán uniqueId cho client
     client.data.uniqueId = data.uniqueId;
 
-    // Nếu user chưa tồn tại trong map, khởi tạo mới
     if (!this.userExecutionMap.has(data.uniqueId)) {
       this.userExecutionMap.set(data.uniqueId, {
         sockets: new Set(),
         testcases: [],
       });
     }
-
     const userExecution = this.userExecutionMap.get(data.uniqueId);
-
-    // Thêm socketId mới vào danh sách sockets của user
     userExecution.sockets.add(client.id);
-
-    // Tìm testcase có exerciseId khớp và index cao nhất
-
     console.log(this.userExecutionMap)
-    // Gửi lại testcase mới nhất nếu có
     if (userExecution.testcases) {
 
       client.emit("restoreExecution", userExecution.testcases);
     }
 
-    // Cập nhật lại map
     this.userExecutionMap.set(data.uniqueId, userExecution);
 
-    // Thông báo đăng ký thành công
     client.emit("registered", { message: "User registered successfully" });
   }
   handleDisconnect(client: Socket) {
@@ -208,13 +197,7 @@ export class SocketGateway implements OnGatewayConnection, OnModuleInit {
       const stream = this.compileService.runCompile(compileRequest);
 
       stream.subscribe({
-        // next: (res) => {
-        //   if (res.status) {
-        //     client.emit("output", res.status);
-        //   } else if (res.LogRunCode) {
-        //     client.emit("output_compile", res.LogRunCode);
-        //   }
-        // },
+ 
         next: (res) => {
           if (!this.userExecutionMap.has(userId)) {
             this.userExecutionMap.set(userId, {
@@ -227,24 +210,20 @@ export class SocketGateway implements OnGatewayConnection, OnModuleInit {
 
           if (res.LogRunCode) {
             const index = res.LogRunCode.testCaseIndex;
-            // Tìm testcase hiện tại trong array
             const existingTestcaseIndex = userExecution.testcases.findIndex(
               tc => tc.exerciseId === data.exerciseId && tc.testcaseIndex === index
             );
 
             if (existingTestcaseIndex === -1) {
-              // Nếu chưa có, thêm mới
               userExecution.testcases.push({
                 exerciseId: data.exerciseId,
                 testcaseIndex: index,
                 value: res.LogRunCode.chunk,
               });
             } else {
-              // Nếu đã có, update value
               userExecution.testcases[existingTestcaseIndex].value += res.LogRunCode.chunk;
             }
 
-            // Đảm bảo array được sắp xếp theo testcaseIndex
             userExecution.testcases.sort((a, b) => a.testcaseIndex - b.testcaseIndex);
           }
           if (res.status) {
@@ -274,6 +253,16 @@ export class SocketGateway implements OnGatewayConnection, OnModuleInit {
           this.userExecutionMap.set(userId, userExecution);
         },
         error: (err) => {
+          const userExecution = this.userExecutionMap.get(userId);
+          // console.log(userExecution.testcases)
+
+          if (userExecution) {
+            // Lọc bỏ testcases thuộc exerciseId hiện tại
+            userExecution.testcases = userExecution.testcases.filter(tc => tc.exerciseId !== data.exerciseId);
+
+            // Cập nhật lại userExecutionMap
+            this.userExecutionMap.set(userId, userExecution);
+          }
           client.emit("error", { message: err.details });
         },
         complete: () => {

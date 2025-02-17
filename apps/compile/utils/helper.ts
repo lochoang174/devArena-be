@@ -403,6 +403,7 @@ async function compileAndRun(
     let output = "";
     let errorOutput = "";
     let timer: NodeJS.Timeout | null = null;
+    let isCompleted = false;
     let hasReceivedOutput = false;
 
     const isSystemOutput = (str: string): boolean => {
@@ -411,45 +412,55 @@ async function compileAndRun(
       return false;
     };
 
-    const completeOutput = () => {
+    const complete = (error?: Error) => {
+      if (isCompleted) return;
+      isCompleted = true;
       if (timer) {
         clearTimeout(timer);
         timer = null;
       }
       process.stdout.removeListener("data", outputHandler);
-     
-      // Nếu không có output nào được nhận
-      if (!hasReceivedOutput) {
-        let noRes: string ="no response"
+      process.stderr.removeListener("data", errorHandler);
+      if (error) {
         if (isUser && subscriber && typeof testCaseIndex === 'number') {
           subscriber.next({
             LogRunCode: {
-              chunk: noRes,
+              chunk: error.message,
               testCaseIndex,
             },
           });
         }
-        resolve(noRes);
+        reject(error);
       } else {
-        resolve(output);
+        if (!hasReceivedOutput) {
+          const noRes = "no response";
+          if (isUser && subscriber && typeof testCaseIndex === 'number') {
+            subscriber.next({
+              LogRunCode: {
+                chunk: noRes,
+                testCaseIndex,
+              },
+            });
+          }
+          resolve(noRes);
+        } else {
+          resolve(output);
+        }
       }
     };
 
     const outputHandler = (data: Buffer) => {
       const chunk = data.toString();
+      output += chunk;
+      hasReceivedOutput = true;
 
-      if (true) {
-        output += chunk;
-        hasReceivedOutput = true;
-
-        if (isUser && subscriber && typeof testCaseIndex === 'number') {
-          subscriber.next({
-            LogRunCode: {
-              chunk,
-              testCaseIndex,
-            },
-          });
-        }
+      if (isUser && subscriber && typeof testCaseIndex === 'number') {
+        subscriber.next({
+          LogRunCode: {
+            chunk,
+            testCaseIndex,
+          },
+        });
       }
 
       if (timer) {
@@ -457,47 +468,55 @@ async function compileAndRun(
       }
 
       timer = setTimeout(() => {
-        completeOutput();
+        complete();
       }, 1000);
     };
 
-    process.stdout.on("data", outputHandler);
-
-    process.stderr.on("data", (data) => {
-      if (timer) {
-        clearTimeout(timer);
-      }
+    const errorHandler = (data: Buffer) => {
       const errorChunk = data.toString();
       if (!isSystemOutput(errorChunk)) {
         errorOutput += errorChunk;
       }
-    });
+    };
 
-    // Thêm timeout tổng thể để xử lý trường hợp không có output
-    const globalTimeout = setTimeout(() => {
-      if (!hasReceivedOutput) {
-        completeOutput();
+    process.stdout.on("data", outputHandler);
+    process.stderr.on("data", errorHandler);
+
+    const overallTimeout = setTimeout(() => {
+      complete(new Error("Overall execution timeout"));
+    }, 35000);
+
+    const noOutputTimeout = setTimeout(() => {
+      if (!hasReceivedOutput && !isCompleted) {
+        complete();
       }
-    }, 31000); // Đặt thời gian lớn hơn timeout của lệnh (30s)
+    }, 31000);
 
     process.on("close", (code) => {
-      clearTimeout(globalTimeout);
-      
-      if (timer) {
-        clearTimeout(timer);
-      }
+      clearTimeout(overallTimeout);
+      clearTimeout(noOutputTimeout);
 
       if (code === 124) {
-        reject(new Error("Execution timeout"));
+        complete(new Error("Execution timeout"));
       } else if (code !== 0) {
-        reject(new Error(`Compilation/Execution failed (code ${code}): ${errorOutput}`));
+        let errorMsg = `Compilation/Execution failed (code ${code})`;
+        if (errorOutput) {
+          errorMsg += `: ${errorOutput}`;
+        }
+        complete(new Error(errorMsg));
+      } else if (errorOutput && !hasReceivedOutput) {
+        complete(new Error(`Execution error: ${errorOutput}`));
       } else {
-        completeOutput();
+        complete();
       }
+    });
+
+    // Handle process errors
+    process.on("error", (error) => {
+      complete(new Error(`Process error: ${error.message}`));
     });
   });
 }
-
 
 export {
   compileJava,
