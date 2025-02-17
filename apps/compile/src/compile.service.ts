@@ -11,13 +11,8 @@ import { ChildProcessWithoutNullStreams } from "child_process";
 import * as fs from "fs/promises";
 import * as path from "path";
 import {
-  compileC,
-  compileCpp,
-  compileJava,
-  startProcess,
-  getProcessOutput,
+
   checkThreadSleep,
-  compileAndRunJava,
   compileAndRun,
 } from "../utils/helper";
 import { RpcException } from "@nestjs/microservices";
